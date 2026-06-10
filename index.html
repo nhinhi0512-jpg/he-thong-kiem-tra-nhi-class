@@ -751,7 +751,7 @@
             try {
                 const downloadLink = await uploadToTempStorage(reportHTML, filename);
                 
-                await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
+                await emailjs.send("service_0jf32ws", "template_6jz1wdc", {
                     student_name: studentName,
                     quiz_title: activeQuiz.title,
                     score: `${scoreValue}/10 (${correctCount}/${total} câu đúng - ${percentage}%)`,
