@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hệ Thống Bài Kiểm Tra Trực Tuyến</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-pastel: #F5EBE6;
+            --primary-brown: #8D7B68;
+            --dark-brown: #605141;
+            --accent-beige: #D0B8A8;
+            --light-beige: #F8F1F1;
+        }
+        body {
+            background-color: var(--bg-pastel);
+            color: var(--dark-brown);
+            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+        }
+        .btn-primary {
+            background-color: var(--primary-brown);
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: var(--dark-brown);
+            transform: translateY(-1px);
+        }
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e5e0d8;
+            border-radius: 1rem;
+        }
+        .grade-btn {
+            transition: all 0.2s;
+            background-color: #fff8f5;
+            border: 1.5px solid #e2d9d2;
+        }
+        .grade-btn.active {
+            border-color: var(--dark-brown);
+            background-color: #f3ede8;
+            font-weight: 600;
+        }
+        .option-label {
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+        .option-label:hover {
+            background-color: #fef3c7;
+            transform: translateX(4px);
+        }
+        input[type="radio"] {
+            accent-color: var(--primary-brown);
+            width: 18px;
+            height: 18px;
+        }
+        .question-text {
+            font-weight: normal;
+            color: #1f2937;
+            line-height: 1.6;
+            white-space: normal;
+        }
+        .question-text br {
+            display: block;
+            margin: 6px 0;
+            content: "";
+        }
+        .cloze-input, .reorder-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            transition: all 0.2s;
+        }
+        .cloze-input:focus, .reorder-input:focus {
+            outline: none;
+            border-color: var(--primary-brown);
+            ring: 2px solid var(--accent-beige);
+        }
+        select, input[type="text"], textarea {
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            padding: 0.5rem 0.75rem;
+            outline: none;
+        }
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--primary-brown);
+            ring: 2px solid var(--accent-beige);
+        }
+        .highlight-word {
+            background-color: #fef08a;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #854d0e;
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+        }
+        .passage-box {
+            background-color: #fefce8;
+            border-left: 6px solid #eab308;
+            padding: 20px 25px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+        .json-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen pb-12">
+
+    <header class="shadow-md p-4 mb-6" style="background-color: var(--primary-brown); color: var(--light-beige);">
+        <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-2">
+            <h1 class="text-xl md:text-2xl font-bold tracking-wide">✏️ HỆ THỐNG KIỂM TRA TRỰC TUYẾN</h1>
+            <span id="view-mode" class="bg-amber-100 text-amber-900 text-xs font-semibold px-3 py-1.5 rounded-full">🎓 Học sinh</span>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4">
+        <!-- Giao diện Học sinh -->
+        <div id="student-app" class="space-y-6">
+            <div class="card p-6 rounded-xl shadow-sm">
+                <h2 class="text-xl font-bold mb-4">📚 Chọn Khối Lớp Của Bạn</h2>
+                <div class="flex flex-wrap gap-3" id="grade-selector"></div>
+            </div>
+
+            <div id="quiz-list-section" class="hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-bold">📝 Bài kiểm tra Khối <span id="selected-grade-title" class="bg-amber-100 px-2 py-0.5 rounded text-amber-800"></span></h3>
+                    <button onclick="window.backToHome()" class="text-sm text-stone-500 underline">← Chọn khối khác</button>
+                </div>
+                <div id="quiz-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+            </div>
+
+            <!-- Phần làm bài -->
+            <section id="quiz-attempt-section" class="hidden card p-5 md:p-6 rounded-xl shadow-md">
+                <div id="violation-notice" class="bg-red-50 border-l-4 border-red-500 p-4 mb-5 rounded-md">
+                    <p class="text-red-700 font-bold">⚠️ QUY ĐỊNH LÀM BÀI:</p>
+                    <p class="text-sm text-red-600">Rời khỏi tab làm bài sẽ bị ghi nhận vi phạm. <strong>Số lần: <span id="violation-count-display">0</span>/3</strong></p>
+                    <p class="text-xs italic text-red-500">Quá 3 lần, bài tự động nộp!</p>
+                </div>
+
+                <div class="flex justify-between items-center border-b pb-2 mb-4">
+                    <h2 id="attempt-quiz-title" class="text-xl md:text-2xl font-bold text-amber-900"></h2>
+                    <button onclick="window.backToQuizList()" class="text-sm bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-full">❌ Thoát</button>
+                </div>
+
+                <div id="questions-container" class="space-y-6 max-h-[60vh] overflow-y-auto pr-2"></div>
+
+                <button id="submit-quiz-btn" class="w-full btn-primary py-3 rounded-xl font-bold text-lg shadow-md mt-6">📮 Nộp Bài</button>
+            </section>
+        </div>
+
+        <!-- Modal xác nhận -->
+        <div id="confirm-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                <div class="flex items-center gap-3 text-amber-600"><span class="text-3xl">⚠️</span><h3 class="text-xl font-bold">Thoát bài kiểm tra?</h3></div>
+                <p class="text-sm text-stone-700 my-4">Tiến trình sẽ không được lưu. Bạn chắc chắn muốn thoát?</p>
+                <div class="flex gap-3 justify-end"><button onclick="window.closeConfirmModal()" class="px-5 py-2.5 bg-stone-100 rounded-xl">Tiếp tục</button><button onclick="window.confirmExitQuiz()" class="px-5 py-2.5 bg-red-600 text-white rounded-xl">Thoát</button></div>
+            </div>
+        </div>
+
+        <!-- Giao diện Admin -->
+        <div id="admin-app" class="hidden space-y-6">
+            <div id="admin-auth" class="card p-8 rounded-xl text-center max-w-md mx-auto my-12 shadow-lg">
+                <h2 class="text-2xl font-bold mb-4">🔐 Khu vực Giáo viên</h2>
+                <p class="text-sm text-gray-600 mb-6">Đăng nhập bằng tài khoản Google được cấp quyền.</p>
+                <button onclick="window.loginAdmin()" class="btn-primary px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 mx-auto shadow">
+                    Đăng nhập bằng Google
+                </button>
+            </div>
+
+            <div id="admin-dashboard" class="hidden space-y-6">
+                <div class="flex justify-between items-center card p-4 rounded-xl">
+                    <div><p class="font-semibold">👋 Giáo viên: <span id="admin-email-display" class="text-amber-800"></span></p></div>
+                    <button onclick="window.logoutAdmin()" class="text-sm text-red-600 underline hover:no-underline">Đăng xuất</button>
+                </div>
+
+                <div class="card p-6 rounded-xl shadow-sm space-y-5">
+                    <h3 id="form-title" class="text-xl font-bold text-amber-900 border-b pb-2">➕ Tạo Bài Kiểm Tra Mới</h3>
+                    <input type="hidden" id="edit-quiz-id">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">📝 Tên bài kiểm tra</label>
+                            <input type="text" id="quiz-title" class="w-full" placeholder="VD: Kiểm tra giữa kỳ 1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">📚 Khối lớp</label>
+                            <select id="quiz-grade" class="w-full">
+                                <option value="6">Khối 6</option>
+                                <option value="7">Khối 7</option>
+                                <option value="8">Khối 8</option>
+                                <option value="9">Khối 9</option>
+                                <option value="10">Khối 10</option>
+                                <option value="11">Khối 11</option>
+                                <option value="12">Khối 12</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">🔓 Trạng thái</label>
+                            <select id="quiz-status" class="w-full">
+                                <option value="open">Mở (Học sinh làm được)</option>
+                                <option value="locked">Khóa (Ẩn với học sinh)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- KHU VỰC UPLOAD JSON MỚI - HỖ TRỢ BẤT KỲ FILE JSON NÀO -->
+                    <div class="p-5 border-2 border-dashed border-amber-800/40 rounded-lg bg-amber-50/50">
+                        <label class="block text-sm font-bold text-amber-900 mb-2">📂 Tải lên file JSON (hỗ trợ mọi cấu trúc đúng định dạng)</label>
+                        <div class="flex gap-3 flex-wrap">
+                            <input type="file" id="quiz-json-file" accept=".json" class="block text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-amber-100 file:text-amber-800 file:cursor-pointer hover:file:bg-amber-200">
+                            <button type="button" id="preview-json-btn" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700">👁️ Xem trước nội dung</button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">✓ Hỗ trợ cấu trúc JSON bất kỳ (multiple_choice, cloze, reorder, reading) <br> ✓ Tự động phát hiện và hiển thị đúng định dạng</p>
+                    </div>
+
+                    <!-- Modal xem trước JSON -->
+                    <div id="json-preview-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+                        <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold">🔍 Xem trước nội dung JSON</h3>
+                                <button onclick="window.closeJsonPreview()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                            </div>
+                            <div id="json-preview-content" class="json-preview"></div>
+                            <div class="flex justify-end mt-4">
+                                <button onclick="window.closeJsonPreview()" class="px-5 py-2 bg-gray-500 text-white rounded-lg">Đóng</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="font-bold mb-2">📝 Nội dung câu hỏi (JSON)</p>
+                        <textarea id="quiz-questions-json" rows="10" class="w-full font-mono text-sm bg-gray-50" placeholder='[
+  {
+    "type": "multiple_choice",
+    "question": "Câu hỏi trắc nghiệm?",
+    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+    "correct": 0,
+    "highlight": "từ_cần_gạch_chân",
+    "explain": "Giải thích đáp án đúng"
+  },
+  {
+    "type": "cloze",
+    "passage": "Đoạn văn có chỗ trống (26) ______",
+    "question": "Câu hỏi điền từ",
+    "correct": "đáp án đúng",
+    "explain": "Giải thích tại sao"
+  },
+  {
+    "type": "reorder",
+    "question": "Sắp xếp các từ sau thành câu:",
+    "words": ["từ1", "từ2", "từ3"],
+    "correct": ["từ1", "từ2", "từ3"],
+    "explain": "Giải thích cấu trúc câu"
+  }
+]'></textarea>
+                    </div>
+
+                    <div class="flex gap-3 justify-end">
+                        <button onclick="window.cancelEdit()" id="btn-cancel-edit" class="hidden px-5 py-2 bg-gray-300 rounded-lg font-semibold">Hủy</button>
+                        <button onclick="window.saveQuiz()" class="btn-primary px-6 py-2 rounded-lg font-semibold">💾 Lưu bài kiểm tra</button>
+                    </div>
+                </div>
+
+                <div class="card p-6 rounded-xl shadow-sm">
+                    <h3 class="text-xl font-bold mb-4">🗂️ Quản lý bài kiểm tra</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b bg-stone-100">
+                                    <th class="p-3">Tên đề</th>
+                                    <th class="p-3">Khối</th>
+                                    <th class="p-3">Số câu</th>
+                                    <th class="p-3">Trạng thái</th>
+                                    <th class="p-3 text-right">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-quiz-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGr5zM79FPI5X8cL0ePNSoHU8o8rhfvOI",
+            authDomain: "hethong-tuvung.firebaseapp.com",
+            projectId: "hethong-tuvung",
+            storageBucket: "hethong-tuvung.firebasestorage.app",
+            appId: "1:526320623944:web:18cc7b5ed2c2efb920937d"
+        };
+        const ALLOWED_ADMIN_EMAILS = ["ptquynhnhi05121999@gmail.com"];
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        emailjs.init("mLtczK88boJ9pQldW");
+
+        let allQuizzes = [], activeQuiz = null, selectedGrade = null, isQuizSubmitted = false, studentName = "", violationCount = 0, isQuizActive = false;
+        let currentMode = new URLSearchParams(window.location.search).get('mode') === 'admin' ? "admin" : "student";
+
+        const studentApp = document.getElementById('student-app');
+        const adminApp = document.getElementById('admin-app');
+        const modeLabel = document.getElementById('view-mode');
+        const gradeSelector = document.getElementById('grade-selector');
+        const quizListSection = document.getElementById('quiz-list-section');
+        const quizAttemptSection = document.getElementById('quiz-attempt-section');
+        const selectedGradeTitle = document.getElementById('selected-grade-title');
+        const quizGrid = document.getElementById('quiz-grid');
+        const confirmModal = document.getElementById('confirm-modal');
+
+        if (currentMode === "admin") {
+            studentApp.classList.add('hidden');
+            adminApp.classList.remove('hidden');
+            modeLabel.innerText = "👨‍🏫 Giáo viên";
+            modeLabel.className = "bg-red-100 text-red-800 text-xs font-semibold px-3 py-1.5 rounded-full";
+        } else {
+            studentApp.classList.remove('hidden');
+            adminApp.classList.add('hidden');
+        }
+
+        // ========== HÀM TỰ ĐỘNG XUỐNG DÒNG ==========
+        function autoFormatLineBreaks(text) {
+            if (!text) return '';
+            
+            let result = text;
+            
+            // Chuyển đổi \n thành <br>
+            result = result.replace(/\n/g, '<br>');
+            
+            // Xử lý a., b., c., d. (thường)
+            result = result.replace(/([a-d]\.)\s+/gi, '<br>$1 ');
+            
+            // Xử lý A., B., C., D. (hoa)
+            result = result.replace(/([A-D]\.)\s+/g, '<br>$1 ');
+            
+            // Xử lý số 1., 2., 3., 4.,...
+            result = result.replace(/(\d+\.)\s+/g, '<br>$1 ');
+            
+            // Xử lý e., f., g. (mở rộng)
+            result = result.replace(/([e-g]\.)\s+/gi, '<br>$1 ');
+            
+            // Xử lý E., F., G.
+            result = result.replace(/([E-G]\.)\s+/g, '<br>$1 ');
+            
+            // Loại bỏ <br> ở đầu chuỗi nếu có
+            result = result.replace(/^<br>/, '');
+            
+            // Xử lý trường hợp <br><br> thành <br> (tránh xuống dòng quá nhiều)
+            result = result.replace(/(<br>){3,}/g, '<br><br>');
+            
+            return result;
+        }
+
+        // Hàm escape HTML kết hợp với auto format
+        function escapeAndFormat(str) {
+            if (!str) return '';
+            return autoFormatLineBreaks(escapeHtml(str));
+        }
+
+        // Hàm xử lý highlight từ trong câu hỏi (có hỗ trợ format)
+        function renderQuestionText(question, highlightWord) {
+            if (!highlightWord) return escapeAndFormat(question);
+            const regex = new RegExp(`(${highlightWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            const formattedQuestion = escapeAndFormat(question);
+            return formattedQuestion.replace(regex, `<span class="highlight-word">$1</span>`);
+        }
+
+        // Hàm render câu hỏi hỗ trợ passage và highlight
+        let lastPassageForCloze = null;
+        let lastPassageForReading = null;
+
+        function renderQuestion(q, idx) {
+            const block = document.createElement('div');
+            block.className = "p-4 rounded-xl bg-stone-50 border border-stone-200 mb-4";
+            
+            // Xử lý passage cho cloze (chỉ hiển thị khi passage khác với câu trước)
+            if (q.type === 'cloze' && q.passage && lastPassageForCloze !== q.passage) {
+                const passageDiv = document.createElement('div');
+                passageDiv.className = 'passage-box';
+                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN (dùng cho câu 26-30):</div> ${escapeAndFormat(q.passage)}`;
+                block.appendChild(passageDiv);
+                lastPassageForCloze = q.passage;
+            }
+            
+            // Xử lý passage cho reading (chỉ hiển thị khi passage khác với câu trước)
+            if (q.type === 'reading' && q.passage && lastPassageForReading !== q.passage) {
+                const passageDiv = document.createElement('div');
+                passageDiv.className = 'passage-box';
+                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN (dùng cho câu 31-35):</div> ${escapeAndFormat(q.passage)}`;
+                block.appendChild(passageDiv);
+                lastPassageForReading = q.passage;
+            }
+            
+            let questionHtml = `<div class="text-stone-800 mb-3 question-text">📌 Câu ${idx+1}: `;
+            if (q.type === 'multiple_choice' && q.highlight) {
+                questionHtml += renderQuestionText(q.question, q.highlight);
+            } else {
+                questionHtml += escapeAndFormat(q.question);
+            }
+            questionHtml += `</div>`;
+            
+            if ((q.type === 'multiple_choice' || q.type === 'reading') && q.options && Array.isArray(q.options)) {
+                questionHtml += `<div class="space-y-2 ml-2">`;
+                q.options.forEach((opt, optIdx) => {
+                    const letter = String.fromCharCode(65 + optIdx);
+                    questionHtml += `<label class="flex items-center gap-3 p-2 rounded-lg border bg-white option-label">
+                                        <input type="radio" name="q${idx}" value="${optIdx}">
+                                        <span class="text-stone-700">${letter}. ${escapeHtml(opt)}</span>
+                                     </label>`;
+                });
+                questionHtml += `</div>`;
+            } 
+            else if (q.type === 'cloze') {
+                if (q.options && Array.isArray(q.options)) {
+                    // Hiển thị dạng trắc nghiệm cho cloze
+                    questionHtml += `<div class="space-y-2 ml-2">`;
+                    q.options.forEach((opt, optIdx) => {
+                        const letter = String.fromCharCode(65 + optIdx);
+                        questionHtml += `<label class="flex items-center gap-3 p-2 rounded-lg border bg-white option-label">
+                                            <input type="radio" name="q${idx}" value="${optIdx}">
+                                            <span class="text-stone-700">${letter}. ${escapeHtml(opt)}</span>
+                                         </label>`;
+                    });
+                    questionHtml += `</div>`;
+                } else {
+                    questionHtml += `<input type="text" id="input-${idx}" class="cloze-input" placeholder="Nhập đáp án của bạn...">`;
+                }
+            } 
+            else if (q.type === 'reorder') {
+                if (q.words && Array.isArray(q.words)) {
+                    questionHtml += `<div class="text-sm text-gray-600 mb-2">🔤 Các từ cần sắp xếp: <span class="font-mono bg-gray-100 px-2 py-1 rounded">${escapeHtml(q.words.join(' · '))}</span></div>`;
+                }
+                questionHtml += `<input type="text" id="input-${idx}" class="reorder-input" placeholder="Nhập câu hoàn chỉnh...">`;
+            }
+            else {
+                questionHtml += `<input type="text" id="input-${idx}" class="cloze-input" placeholder="Nhập đáp án...">`;
+            }
+            
+            questionHtml += `<div id="explain-${idx}" class="hidden p-3 rounded-md text-sm mt-3"></div>`;
+            block.innerHTML = questionHtml;
+            return block;
+        }
+
+        function startQuiz(quiz) {
+            const name = prompt("📋 Nhập họ tên để bắt đầu làm bài:", "");
+            if (!name || name.trim() === "") return Swal.fire("Thông báo", "Cần nhập tên để tiếp tục", "info");
+            studentName = name.trim();
+            activeQuiz = quiz;
+            isQuizSubmitted = false;
+            violationCount = 0;
+            isQuizActive = true;
+            document.getElementById('violation-count-display').innerText = "0";
+            quizListSection.classList.add('hidden');
+            quizAttemptSection.classList.remove('hidden');
+            document.getElementById('attempt-quiz-title').innerText = quiz.title;
+            const container = document.getElementById('questions-container');
+            container.innerHTML = "";
+            
+            // Reset lại biến nhớ passage
+            lastPassageForCloze = null;
+            lastPassageForReading = null;
+            
+            (quiz.questions || []).forEach((q, idx) => {
+                const questionBlock = renderQuestion(q, idx);
+                container.appendChild(questionBlock);
+            });
+            document.getElementById('submit-quiz-btn').classList.remove('hidden');
+        }
+
+        async function submitQuizHandler() {
+            if (isQuizSubmitted || !activeQuiz) return;
+    
+            const questions = activeQuiz.questions;
+            if (!questions?.length) return Swal.fire("Lỗi", "Bài kiểm tra không có câu hỏi", "error");
+    
+            // Hiển thị loading
+            Swal.fire({
+                title: 'Đang chấm điểm...',
+                html: 'Vui lòng chờ trong giây lát',
+                llowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+    
+            let correctCount = 0;
+            const studentAnswers = []; // Lưu chi tiết câu trả lời của học sinh
+    
+            for (let i = 0; i < questions.length; i++) {
+                const q = questions[i];
+                const explainDiv = document.getElementById(`explain-${i}`);
+                let isCorrect = false;
+                let correctAnswerText = "";
+                let userAnswerText = "";
+        
+                // XỬ LÝ TỪNG LOẠI CÂU HỎI
+                if (q.type === 'multiple_choice' || q.type === 'reading') {
+                    const selectedRadio = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (selectedRadio && q.options) {
+                        const selectedVal = parseInt(selectedRadio.value);
+                        isCorrect = (selectedVal === q.correct);
+                        userAnswerText = q.options[selectedVal] || "Không chọn";
+                        correctAnswerText = q.options[q.correct] || "Không xác định";
+                    } else {
+                        userAnswerText = "Chưa chọn đáp án";
+                        correctAnswerText = q.options?.[q.correct] || "Chưa có đáp án";
+                    }
+                } 
+                else if (q.type === 'cloze') {
+                    const selectedRadio = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (selectedRadio && q.options) {
+                        const selectedVal = parseInt(selectedRadio.value);
+                        isCorrect = (selectedVal === q.correct);
+                        userAnswerText = q.options[selectedVal] || "Không chọn";
+                        correctAnswerText = q.options[q.correct] || "Không xác định";
+                    } else {
+                        const inputEl = document.getElementById(`input-${i}`);
+                        if (inputEl) {
+                            userAnswerText = inputEl.value.trim() || "(Bỏ trống)";
+                            const correctVal = (q.correct || "").toString().toLowerCase();
+                            isCorrect = (userAnswerText.toLowerCase() === correctVal);
+                            correctAnswerText = q.correct;
+                        } else {
+                            userAnswerText = "(Không nhập)";
+                            correctAnswerText = q.correct;
+                        }
+                    }
+                } 
+                else if (q.type === 'reorder') {
+                    const inputEl = document.getElementById(`input-${i}`);
+                    if (inputEl) {
+                        userAnswerText = inputEl.value.trim() || "(Bỏ trống)";
+                        const correctSentence = (Array.isArray(q.correct) ? q.correct.join(' ') : q.correct).toLowerCase();
+                        isCorrect = (userAnswerText.toLowerCase() === correctSentence);
+                        correctAnswerText = Array.isArray(q.correct) ? q.correct.join(' ') : q.correct;
+                    } else {
+                        userAnswerText = "(Không nhập)";
+                        correctAnswerText = q.correct;
+                    }
+                }
+                else {
+                    const inputEl = document.getElementById(`input-${i}`);
+                    if (inputEl) {
+                        userAnswerText = inputEl.value.trim() || "(Bỏ trống)";
+                        const correctAns = q.correct ? q.correct.toString().toLowerCase() : "";
+                        isCorrect = (userAnswerText.toLowerCase() === correctAns);
+                        correctAnswerText = q.correct;
+                    } else {
+                        userAnswerText = "(Không nhập)";
+                        correctAnswerText = q.correct;
+                    }
+                }
+        
+                if (isCorrect) correctCount++;
+        
+                // LƯU CHI TIẾT CÂU TRẢ LỜI
+                studentAnswers.push({
+                    questionNumber: i + 1,
+                    questionText: q.question,
+                    userAnswer: userAnswerText,
+                    correctAnswer: correctAnswerText,
+                    isCorrect: isCorrect,
+                    explanation: q.explain || "Không có giải thích"
+                });
+        
+                // HIỂN THỊ KẾT QUẢ TRÊN WEB
+                if (explainDiv) {
+                    explainDiv.className = `p-3 rounded-md text-sm mt-2 ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+                    explainDiv.innerHTML = `<b>${isCorrect ? '✅ Đúng' : '❌ Sai'}</b><br>📖 Đáp án của bạn: ${escapeHtml(userAnswerText)}<br>📖 Đáp án đúng: ${escapeHtml(correctAnswerText)}<br>💡 Giải thích: ${escapeHtml(q.explain || 'Không có giải thích.')}`;
+                    explainDiv.classList.remove('hidden');
+                }
+            }
+    
+            const total = questions.length;
+            const scoreValue = ((correctCount / total) * 10).toFixed(2);
+            const percentage = ((correctCount / total) * 100).toFixed(1);
+            const submitTime = new Date().toLocaleString('vi-VN');
+    
+            isQuizSubmitted = true;
+            isQuizActive = false;
+            document.getElementById('submit-quiz-btn').classList.add('hidden');
+    
+            // XÂY DỰNG NỘI DUNG EMAIL CHI TIẾT
+            function buildEmailContent(isTeacher = false) {
+                let correctIcon = "✅", wrongIcon = "❌";
+        
+                // Tạo bảng chi tiết từng câu
+                let detailsTable = "";
+                studentAnswers.forEach(ans => {
+                    const statusIcon = ans.isCorrect ? correctIcon : wrongIcon;
+                    const statusText = ans.isCorrect ? "ĐÚNG" : "SAI";
+                    const rowColor = ans.isCorrect ? "#e8f5e9" : "#ffebee";
+            
+                    detailsTable += `
+                        <tr style="border-bottom: 1px solid #ddd; background-color: ${rowColor};">
+                            <td style="padding: 12px; text-align: center; font-weight: bold;">${ans.questionNumber}</td>
+                            <td style="padding: 12px;">${escapeHtmlForEmail(ans.questionText)}</td>
+                            <td style="padding: 12px; ${ans.isCorrect ? 'color: #2e7d32;' : 'color: #c62828;'}">${escapeHtmlForEmail(ans.userAnswer)}</td>
+                            <td style="padding: 12px; color: #1565c0;">${escapeHtmlForEmail(ans.correctAnswer)}</td>
+                            <td style="padding: 12px; text-align: center; font-weight: bold;">${statusIcon} ${statusText}</td>
+                        </tr>
+                    `;
+                });
+        
+                return `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                            .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+                            .header { background: #8D7B68; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+                            .score-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center; }
+                            .score-value { font-size: 48px; font-weight: bold; margin: 10px 0; }
+                            .info-row { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 8px; }
+                            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                            th { background: #8D7B68; color: white; padding: 12px; text-align: center; }
+                            td { border: 1px solid #ddd; }
+                            .footer { background: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 10px 10px; margin-top: 20px; }
+                            .summary { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h2>📝 KẾT QUẢ BÀI KIỂM TRA</h2>
+                                <p>${escapeHtmlForEmail(activeQuiz.title)}</p>
+                            </div>
+                    
+                            <div class="score-box">
+                                <div>🎯 ĐIỂM SỐ</div>
+                                <div class="score-value">${scoreValue} / 10</div>
+                                <div>⭐ Tỉ lệ đúng: ${percentage}% (${correctCount}/${total} câu)</div>
+                            </div>
+                    
+                            <div class="info-row">
+                                <strong>👤 HỌC SINH:</strong> ${escapeHtmlForEmail(studentName)}<br>
+                                <strong>📅 THỜI GIAN NỘP:</strong> ${submitTime}<br>
+                                <strong>⚠️ SỐ LẦN VI PHẠM:</strong> ${violationCount}/3
+                            </div>
+                    
+                            ${!isTeacher ? `
+                            <div class="summary" style="background: #fff3e0;">
+                                <strong>💬 LỜI NHẮN:</strong><br>
+                                Bạn đã hoàn thành bài kiểm tra! Hãy xem chi tiết từng câu bên dưới để rút kinh nghiệm nhé.
+                            </div>
+                            ` : `
+                            <div class="summary" style="background: #fff3e0;">
+                                <strong>📊 TỔNG KẾT GIÁO VIÊN:</strong><br>
+                                Học sinh đã hoàn thành bài với ${correctCount}/${total} câu đúng. Số lần vi phạm: ${violationCount}/3.
+                            </div>
+                            `}
+                    
+                            <h3 style="margin-top: 25px;">📋 CHI TIẾT TỪNG CÂU HỎI</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Câu hỏi</th>
+                                        <th>Câu trả lời của học sinh</th>
+                                        <th>Đáp án đúng</th>
+                                        <th>Kết quả</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${detailsTable}
+                                </tbody>
+                            </table>
+                    
+                            <div class="footer">
+                                <p>📧 Email này được gửi tự động từ Hệ thống Kiểm tra Trực tuyến</p>
+                                <p>© ${new Date().getFullYear()} - Hỗ trợ học tập</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `;
+            }
+    
+    function escapeHtmlForEmail(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/\n/g, '<br>');
+    }
+    
+    try {
+        // 1. GỬI EMAIL CHO GIÁO VIÊN (email quản trị)
+        await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
+            to_email: "ptquynhnhi05121999@gmail.com",
+            subject: `📊 Kết quả bài kiểm tra - ${studentName}`,
+            student_name: studentName,
+            quiz_title: activeQuiz.title,
+            score: `${scoreValue}/10 (${correctCount}/${total} câu đúng)`,
+            violation_count: violationCount,
+            correct_answers: `${correctCount}/${total}`,
+            detail_html: buildEmailContent(true),
+            submit_time: submitTime
+        });
+        
+        // 2. GỬI EMAIL CHO HỌC SINH (nếu học sinh cung cấp email - có thể hỏi thêm)
+        // Hiển thị dialog nhập email học sinh (tuỳ chọn)
+        const { value: studentEmail } = await Swal.fire({
+            title: '📧 Nhận kết quả qua email?',
+            text: 'Nhập email của bạn để nhận chi tiết bài làm (hoặc bỏ qua)',
+            input: 'email',
+            inputPlaceholder: 'example@email.com',
+            showCancelButton: true,
+            confirmButtonText: 'Gửi cho tôi',
+            cancelButtonText: 'Bỏ qua',
+            allowOutsideClick: false
+        });
+        
+        if (studentEmail && studentEmail.includes('@')) {
+            try {
+                // Tạo template riêng cho học sinh hoặc dùng chung
+                await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
+                    to_email: studentEmail,
+                    subject: `🎓 Kết quả bài kiểm tra "${activeQuiz.title}" - ${studentName}`,
+                    student_name: studentName,
+                    quiz_title: activeQuiz.title,
+                    score: `${scoreValue}/10 (${correctCount}/${total} câu đúng)`,
+                    violation_count: violationCount,
+                    correct_answers: `${correctCount}/${total}`,
+                    detail_html: buildEmailContent(false),
+                    submit_time: submitTime
+                });
+                Swal.fire({
+                    title: "✅ Hoàn thành!",
+                    html: `Bạn đúng ${correctCount}/${total} câu. Điểm: ${scoreValue}/10.<br>📧 Kết quả đã được gửi đến email: ${studentEmail}`,
+                    icon: "success"
+                });
+            } catch (err) {
+                Swal.fire({
+                    title: "🎉 Nộp bài thành công!",
+                    html: `Điểm: ${scoreValue}/10.<br>⚠️ Không thể gửi email đến ${studentEmail}. Vui lòng kiểm tra lại địa chỉ email.`,
+                    icon: "warning"
+                });
+            }
+        } else {
+            Swal.fire({
+                title: "✅ Hoàn thành!",
+                html: `Bạn đúng ${correctCount}/${total} câu. Điểm: ${scoreValue}/10.<br>📧 Kết quả đã được gửi đến giáo viên.`,
+                icon: "success"
+            });
+        }
+        
+    } catch (err) {
+        console.error("Lỗi gửi email:", err);
+        Swal.fire({
+            title: "🎉 Nộp bài thành công!",
+            html: `Điểm: ${scoreValue}/10.<br>⚠️ Không thể gửi email. Kiểm tra lại kết nối mạng.`,
+            icon: "warning"
+        });
+    }
+}
+
+        function renderGradeButtons() {
+            gradeSelector.innerHTML = '';
+            for (let g = 6; g <= 12; g++) {
+                const btn = document.createElement('button');
+                btn.innerText = `Khối ${g}`;
+                btn.className = `px-5 py-2.5 rounded-xl font-medium grade-btn shadow-sm`;
+                btn.onclick = () => {
+                    document.querySelectorAll('#grade-selector button').forEach(b => b.classList.remove('active', 'border-2', 'border-amber-700'));
+                    btn.classList.add('active', 'border-2', 'border-amber-700');
+                    selectedGrade = g;
+                    selectedGradeTitle.innerText = g;
+                    quizListSection.classList.remove('hidden');
+                    quizAttemptSection.classList.add('hidden');
+                    renderStudentQuizzes();
+                };
+                gradeSelector.appendChild(btn);
+            }
+            if (gradeSelector.firstChild) gradeSelector.firstChild.click();
+        }
+
+        function renderStudentQuizzes() {
+            if (!selectedGrade) return;
+            quizGrid.innerHTML = '';
+            const filtered = allQuizzes.filter(q => q.grade == selectedGrade && q.status === 'open');
+            if (filtered.length === 0) {
+                quizGrid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-500">📭 Chưa có bài kiểm tra nào cho khối ${selectedGrade}</div>`;
+                return;
+            }
+            filtered.forEach(quiz => {
+                const card = document.createElement('div');
+                card.className = "card p-5 flex justify-between items-center hover:shadow-md transition";
+                card.innerHTML = `<div><h4 class="font-bold text-lg">${escapeHtml(quiz.title)}</h4><p class="text-xs text-gray-500">${quiz.questions?.length || 0} câu hỏi</p></div>
+                                  <button class="btn-primary px-5 py-2 rounded-lg">✍️ Làm bài</button>`;
+                card.querySelector('button').onclick = () => startQuiz(quiz);
+                quizGrid.appendChild(card);
+            });
+        }
+
+        window.backToQuizList = function() {
+            if (isQuizSubmitted) return executeExit();
+            const hasAnyAnswer = document.querySelectorAll('#questions-container input[type="radio"]:checked, #questions-container input[type="text"]').length > 0;
+            const hasTextAnswer = Array.from(document.querySelectorAll('#questions-container input[type="text"]')).some(input => input.value.trim() !== "");
+            if (hasAnyAnswer || hasTextAnswer) confirmModal.classList.remove('hidden');
+            else executeExit();
+        };
+        
+        window.backToHome = function() { 
+            selectedGrade = null; 
+            quizListSection.classList.add('hidden'); 
+            if(gradeSelector.firstChild) gradeSelector.firstChild.click(); 
+        };
+        
+        window.closeConfirmModal = () => confirmModal.classList.add('hidden');
+        window.confirmExitQuiz = () => { confirmModal.classList.add('hidden'); executeExit(); };
+        
+        function executeExit() { 
+            isQuizActive = false; 
+            quizAttemptSection.classList.add('hidden'); 
+            if (selectedGrade) { 
+                quizListSection.classList.remove('hidden'); 
+                renderStudentQuizzes(); 
+            } 
+        }
+        
+        window.addEventListener("blur", () => {
+            if (isQuizActive && !isQuizSubmitted && quizAttemptSection && !quizAttemptSection.classList.contains('hidden')) {
+                setTimeout(() => {
+                    if (!document.hasFocus()) {
+                        violationCount++;
+                        document.getElementById('violation-count-display').innerText = violationCount;
+                        Swal.fire({ title: '⚠️ Vi phạm', text: `Rời tab (${violationCount}/3)`, icon: 'warning', toast: true, position: 'top-end', timer: 2000 });
+                        if (violationCount >= 3) {
+                            Swal.fire('Tự động nộp bài!', '', 'warning').then(() => submitQuizHandler());
+                        }
+                    }
+                }, 400);
+            }
+        });
+
+        function listenToQuizzes() {
+            onSnapshot(collection(db, "quizzes"), (snap) => {
+                allQuizzes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderStudentQuizzes();
+                if (currentMode === "admin") renderAdminTable();
+            });
+        }
+        
+        window.loginAdmin = () => signInWithPopup(auth, provider).catch(e => alert("Lỗi: " + e.message));
+        window.logoutAdmin = () => signOut(auth).then(() => { window.location.search = ""; });
+        
+        function checkAdminAuth() { 
+            onAuthStateChanged(auth, (user) => { 
+                if(user && ALLOWED_ADMIN_EMAILS.includes(user.email)) { 
+                    document.getElementById('admin-auth').classList.add('hidden'); 
+                    document.getElementById('admin-dashboard').classList.remove('hidden'); 
+                    document.getElementById('admin-email-display').innerText = user.email; 
+                } else { 
+                    document.getElementById('admin-auth').classList.remove('hidden'); 
+                    document.getElementById('admin-dashboard').classList.add('hidden'); 
+                    if(user) signOut(auth); 
+                } 
+            }); 
+        }
+        
+        function renderAdminTable() {
+            const tbody = document.getElementById('admin-quiz-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            allQuizzes.forEach(quiz => {
+                const row = tbody.insertRow();
+                row.className = "border-b hover:bg-stone-50";
+                row.innerHTML = `
+                    <td class="p-3 font-semibold">${escapeHtml(quiz.title)}</td>
+                    <td class="p-3">Khối ${quiz.grade}</td>
+                    <td class="p-3">${quiz.questions?.length || 0}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${quiz.status==='open' ? 'bg-green-100 text-green-800' : 'bg-stone-200 text-stone-700'}">${quiz.status==='open' ? '🔓 Mở' : '🔒 Khóa'}</span></td>
+                    <td class="p-3 text-right space-x-1">
+                        <button class="bg-blue-600 text-white text-xs px-2.5 py-1.5 rounded hover:bg-blue-700" onclick='window.editQuiz("${quiz.id}")'>Sửa</button>
+                        <button class="bg-red-600 text-white text-xs px-2.5 py-1.5 rounded hover:bg-red-700" onclick='window.deleteQuiz("${quiz.id}")'>Xóa</button>
+                    </td>
+                `;
+            });
+        }
+        
+        window.editQuiz = (id) => { 
+            const quiz = allQuizzes.find(x => x.id === id); 
+            if(quiz){ 
+                document.getElementById('edit-quiz-id').value = quiz.id; 
+                document.getElementById('quiz-title').value = quiz.title; 
+                document.getElementById('quiz-grade').value = quiz.grade; 
+                document.getElementById('quiz-status').value = quiz.status; 
+                document.getElementById('quiz-questions-json').value = JSON.stringify(quiz.questions, null, 2); 
+                document.getElementById('form-title').innerHTML = "✏️ Sửa bài kiểm tra"; 
+                document.getElementById('btn-cancel-edit').classList.remove('hidden'); 
+            } 
+        };
+        
+        window.deleteQuiz = async (id) => { 
+            if(confirm("Xóa vĩnh viễn bài kiểm tra này?")) {
+                await deleteDoc(doc(db, "quizzes", id)); 
+                cancelEdit();
+            }
+        };
+        
+        window.saveQuiz = async () => {
+            const id = document.getElementById('edit-quiz-id').value;
+            const title = document.getElementById('quiz-title').value.trim();
+            const grade = parseInt(document.getElementById('quiz-grade').value);
+            const status = document.getElementById('quiz-status').value;
+            const jsonText = document.getElementById('quiz-questions-json').value.trim();
+            
+            if(!title) return alert("Vui lòng nhập tên bài kiểm tra");
+            if(!jsonText) return alert("Vui lòng nhập nội dung câu hỏi (JSON)");
+            
+            let questions = [];
+            try { 
+                questions = JSON.parse(jsonText); 
+                if(!Array.isArray(questions)) throw new Error(); 
+            } catch(e) { 
+                return alert("JSON không hợp lệ! Vui lòng kiểm tra lại cấu trúc."); 
+            }
+            
+            const data = { title, grade, status, questions, updatedAt: new Date().toISOString() };
+            
+            try {
+                if(id) {
+                    await updateDoc(doc(db, "quizzes", id), data);
+                    alert("✅ Cập nhật bài kiểm tra thành công!");
+                } else {
+                    await addDoc(collection(db, "quizzes"), data);
+                    alert("✅ Tạo mới bài kiểm tra thành công!");
+                }
+                cancelEdit();
+            } catch (error) {
+                alert("❌ Lỗi: " + error.message);
+            }
+        };
+        
+        window.cancelEdit = () => { 
+            document.getElementById('edit-quiz-id').value = ""; 
+            document.getElementById('quiz-title').value = ""; 
+            document.getElementById('quiz-questions-json').value = ""; 
+            document.getElementById('quiz-json-file').value = ""; 
+            document.getElementById('form-title').innerHTML = "➕ Tạo bài kiểm tra mới"; 
+            document.getElementById('btn-cancel-edit').classList.add('hidden'); 
+        };
+        
+        // Hàm xem trước JSON
+        window.previewJson = () => {
+            const fileInput = document.getElementById('quiz-json-file');
+            if(!fileInput.files || !fileInput.files[0]) {
+                alert("Vui lòng chọn file JSON trước!");
+                return;
+            }
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const parsed = JSON.parse(ev.target.result);
+                    const previewContent = document.getElementById('json-preview-content');
+                    previewContent.innerHTML = JSON.stringify(parsed, null, 2);
+                    document.getElementById('json-preview-modal').classList.remove('hidden');
+                } catch(err) {
+                    alert("File JSON không hợp lệ: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        window.closeJsonPreview = () => {
+            document.getElementById('json-preview-modal').classList.add('hidden');
+        };
+        
+        // Cập nhật hàm load file - hỗ trợ mọi cấu trúc JSON
+        function setupFileLoader() {
+            const fileInput = document.getElementById('quiz-json-file');
+            if(fileInput) {
+                fileInput.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if(!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        try {
+                            const parsed = JSON.parse(ev.target.result);
+                            // Kiểm tra nếu là mảng các câu hỏi
+                            if(Array.isArray(parsed)) {
+                                document.getElementById('quiz-questions-json').value = JSON.stringify(parsed, null, 2);
+                                Swal.fire({
+                                    title: "✅ Thành công!",
+                                    html: `Đã tải file <strong>${file.name}</strong><br>Số câu hỏi: ${parsed.length}`,
+                                    icon: "success",
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            } 
+                            // Nếu là object có chứa questions array
+                            else if(parsed.questions && Array.isArray(parsed.questions)) {
+                                document.getElementById('quiz-questions-json').value = JSON.stringify(parsed.questions, null, 2);
+                                Swal.fire({
+                                    title: "✅ Thành công!",
+                                    html: `Đã tải file <strong>${file.name}</strong><br>Số câu hỏi: ${parsed.questions.length}`,
+                                    icon: "success",
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                            else {
+                                throw new Error("Cấu trúc JSON không hợp lệ. Cần là mảng các câu hỏi hoặc object có trường 'questions'.");
+                            }
+                        } catch(err) {
+                            Swal.fire({
+                                title: "❌ Lỗi!",
+                                html: `File JSON không hợp lệ:<br><small>${err.message}</small>`,
+                                icon: "error"
+                            });
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+            }
+        }
+        
+        function escapeHtml(str) { 
+            if(!str) return ''; 
+            return String(str).replace(/[&<>]/g, function(m){
+                if(m === '&') return '&amp;'; 
+                if(m === '<') return '&lt;'; 
+                if(m === '>') return '&gt;'; 
+                return m;
+            }); 
+        }
+
+        document.getElementById('submit-quiz-btn')?.addEventListener('click', submitQuizHandler);
+        document.getElementById('preview-json-btn')?.addEventListener('click', window.previewJson);
+        
+        renderGradeButtons();
+        listenToQuizzes();
+        setupFileLoader();
+        if (currentMode === "admin") checkAdminAuth();
+    </script>
+</body>
+</html>
