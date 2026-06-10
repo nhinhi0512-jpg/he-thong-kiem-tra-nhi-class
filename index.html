@@ -681,35 +681,6 @@
                     filename: filename
                 });
                 
-                // Hỏi email học sinh
-                const { value: studentEmail } = await Swal.fire({
-                    title: '📧 Nhận kết quả qua email?',
-                    text: 'Nhập email của bạn để nhận link tải báo cáo chi tiết',
-                    input: 'email',
-                    inputPlaceholder: 'example@email.com',
-                    showCancelButton: true,
-                    confirmButtonText: 'Gửi cho tôi',
-                    cancelButtonText: 'Bỏ qua',
-                    allowOutsideClick: false
-                });
-                
-                if (studentEmail && studentEmail.includes('@')) {
-                    await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
-                        student_name: studentName,
-                        quiz_title: activeQuiz.title,
-                        score: `${scoreValue}/10`,
-                        violation_count: violationCount,
-                        correct_answers: `${correctCount}/${total}`,
-                        submit_time: submitTime,
-                        download_link: downloadLink,
-                        filename: filename
-                    });
-                    Swal.fire({
-                        title: "✅ Hoàn thành!",
-                        html: `Điểm: ${scoreValue}/10.<br>📧 Link tải báo cáo đã được gửi đến: ${studentEmail}`,
-                        icon: "success"
-                    });
-                } else {
                     // Hiển thị link tải trực tiếp cho học sinh
                     Swal.fire({
                         title: "✅ Hoàn thành!",
