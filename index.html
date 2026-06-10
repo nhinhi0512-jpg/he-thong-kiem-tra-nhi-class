@@ -224,7 +224,6 @@
                         </div>
                     </div>
 
-                    <!-- KHU VỰC UPLOAD JSON MỚI - HỖ TRỢ BẤT KỲ FILE JSON NÀO -->
                     <div class="p-5 border-2 border-dashed border-amber-800/40 rounded-lg bg-amber-50/50">
                         <label class="block text-sm font-bold text-amber-900 mb-2">📂 Tải lên file JSON (hỗ trợ mọi cấu trúc đúng định dạng)</label>
                         <div class="flex gap-3 flex-wrap">
@@ -234,7 +233,6 @@
                         <p class="text-xs text-gray-500 mt-2">✓ Hỗ trợ cấu trúc JSON bất kỳ (multiple_choice, cloze, reorder, reading) <br> ✓ Tự động phát hiện và hiển thị đúng định dạng</p>
                     </div>
 
-                    <!-- Modal xem trước JSON -->
                     <div id="json-preview-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
                         <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl">
                             <div class="flex justify-between items-center mb-4">
@@ -258,20 +256,6 @@
     "correct": 0,
     "highlight": "từ_cần_gạch_chân",
     "explain": "Giải thích đáp án đúng"
-  },
-  {
-    "type": "cloze",
-    "passage": "Đoạn văn có chỗ trống (26) ______",
-    "question": "Câu hỏi điền từ",
-    "correct": "đáp án đúng",
-    "explain": "Giải thích tại sao"
-  },
-  {
-    "type": "reorder",
-    "question": "Sắp xếp các từ sau thành câu:",
-    "words": ["từ1", "từ2", "từ3"],
-    "correct": ["từ1", "từ2", "từ3"],
-    "explain": "Giải thích cấu trúc câu"
   }
 ]'></textarea>
                     </div>
@@ -345,46 +329,25 @@
             adminApp.classList.add('hidden');
         }
 
-        // ========== HÀM TỰ ĐỘNG XUỐNG DÒNG ==========
         function autoFormatLineBreaks(text) {
             if (!text) return '';
-            
             let result = text;
-            
-            // Chuyển đổi \n thành <br>
             result = result.replace(/\n/g, '<br>');
-            
-            // Xử lý a., b., c., d. (thường)
             result = result.replace(/([a-d]\.)\s+/gi, '<br>$1 ');
-            
-            // Xử lý A., B., C., D. (hoa)
             result = result.replace(/([A-D]\.)\s+/g, '<br>$1 ');
-            
-            // Xử lý số 1., 2., 3., 4.,...
             result = result.replace(/(\d+\.)\s+/g, '<br>$1 ');
-            
-            // Xử lý e., f., g. (mở rộng)
             result = result.replace(/([e-g]\.)\s+/gi, '<br>$1 ');
-            
-            // Xử lý E., F., G.
             result = result.replace(/([E-G]\.)\s+/g, '<br>$1 ');
-            
-            // Loại bỏ <br> ở đầu chuỗi nếu có
             result = result.replace(/^<br>/, '');
-            
-            // Xử lý trường hợp <br><br> thành <br> (tránh xuống dòng quá nhiều)
             result = result.replace(/(<br>){3,}/g, '<br><br>');
-            
             return result;
         }
 
-        // Hàm escape HTML kết hợp với auto format
         function escapeAndFormat(str) {
             if (!str) return '';
             return autoFormatLineBreaks(escapeHtml(str));
         }
 
-        // Hàm xử lý highlight từ trong câu hỏi (có hỗ trợ format)
         function renderQuestionText(question, highlightWord) {
             if (!highlightWord) return escapeAndFormat(question);
             const regex = new RegExp(`(${highlightWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
@@ -392,7 +355,6 @@
             return formattedQuestion.replace(regex, `<span class="highlight-word">$1</span>`);
         }
 
-        // Hàm render câu hỏi hỗ trợ passage và highlight
         let lastPassageForCloze = null;
         let lastPassageForReading = null;
 
@@ -400,20 +362,18 @@
             const block = document.createElement('div');
             block.className = "p-4 rounded-xl bg-stone-50 border border-stone-200 mb-4";
             
-            // Xử lý passage cho cloze (chỉ hiển thị khi passage khác với câu trước)
             if (q.type === 'cloze' && q.passage && lastPassageForCloze !== q.passage) {
                 const passageDiv = document.createElement('div');
                 passageDiv.className = 'passage-box';
-                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN (dùng cho câu 26-30):</div> ${escapeAndFormat(q.passage)}`;
+                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN:</div> ${escapeAndFormat(q.passage)}`;
                 block.appendChild(passageDiv);
                 lastPassageForCloze = q.passage;
             }
             
-            // Xử lý passage cho reading (chỉ hiển thị khi passage khác với câu trước)
             if (q.type === 'reading' && q.passage && lastPassageForReading !== q.passage) {
                 const passageDiv = document.createElement('div');
                 passageDiv.className = 'passage-box';
-                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN (dùng cho câu 31-35):</div> ${escapeAndFormat(q.passage)}`;
+                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN:</div> ${escapeAndFormat(q.passage)}`;
                 block.appendChild(passageDiv);
                 lastPassageForReading = q.passage;
             }
@@ -439,7 +399,6 @@
             } 
             else if (q.type === 'cloze') {
                 if (q.options && Array.isArray(q.options)) {
-                    // Hiển thị dạng trắc nghiệm cho cloze
                     questionHtml += `<div class="space-y-2 ml-2">`;
                     q.options.forEach((opt, optIdx) => {
                         const letter = String.fromCharCode(65 + optIdx);
@@ -483,7 +442,6 @@
             const container = document.getElementById('questions-container');
             container.innerHTML = "";
             
-            // Reset lại biến nhớ passage
             lastPassageForCloze = null;
             lastPassageForReading = null;
             
@@ -494,22 +452,224 @@
             document.getElementById('submit-quiz-btn').classList.remove('hidden');
         }
 
+        // HÀM TẠO FILE HTML ĐẸP ĐỂ GỬI KÈM
+        function generateReportHTML(studentName, quizTitle, scoreValue, total, correctCount, violationCount, studentAnswers, submitTime) {
+            const percentage = ((correctCount / total) * 100).toFixed(1);
+            
+            return `<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>KetQua_${studentName}_${quizTitle}</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body {
+                        font-family: 'Segoe UI', Arial, sans-serif;
+                        background: #f0f2f5;
+                        padding: 40px;
+                        line-height: 1.6;
+                    }
+                    .report-container {
+                        max-width: 1000px;
+                        margin: 0 auto;
+                        background: white;
+                        border-radius: 20px;
+                        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                        overflow: hidden;
+                    }
+                    .header {
+                        background: linear-gradient(135deg, #8D7B68 0%, #6b5b4a 100%);
+                        color: white;
+                        padding: 40px;
+                        text-align: center;
+                    }
+                    .header h1 { font-size: 32px; margin-bottom: 10px; }
+                    .score-card {
+                        background: white;
+                        margin: -30px 30px 30px 30px;
+                        border-radius: 20px;
+                        padding: 25px;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                        text-align: center;
+                    }
+                    .score-number {
+                        font-size: 64px;
+                        font-weight: bold;
+                        color: #8D7B68;
+                        margin: 10px 0;
+                    }
+                    .stats-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                        gap: 20px;
+                        padding: 0 30px 30px 30px;
+                    }
+                    .stat-card {
+                        background: #f8f9fa;
+                        padding: 20px;
+                        border-radius: 15px;
+                        text-align: center;
+                        border-left: 4px solid #8D7B68;
+                    }
+                    .stat-value {
+                        font-size: 20px;
+                        font-weight: bold;
+                        color: #2c3e50;
+                        margin: 10px 0;
+                    }
+                    .question-section {
+                        padding: 30px;
+                    }
+                    .question-title {
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #8D7B68;
+                        margin-bottom: 20px;
+                        padding-bottom: 10px;
+                        border-bottom: 3px solid #8D7B68;
+                    }
+                    .question-item {
+                        background: white;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 12px;
+                        margin-bottom: 15px;
+                        overflow: hidden;
+                    }
+                    .question-header {
+                        padding: 15px 20px;
+                        background: #f8f9fa;
+                        border-bottom: 1px solid #e0e0e0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    .badge {
+                        padding: 5px 12px;
+                        border-radius: 20px;
+                        font-size: 12px;
+                        font-weight: bold;
+                    }
+                    .badge-correct { background: #4caf50; color: white; }
+                    .badge-wrong { background: #f44336; color: white; }
+                    .question-body { padding: 20px; }
+                    .question-text {
+                        font-weight: 500;
+                        background: #f5f5f5;
+                        padding: 12px;
+                        border-radius: 8px;
+                        margin-bottom: 15px;
+                    }
+                    .answer-row {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 15px;
+                        margin-top: 10px;
+                    }
+                    .student-answer {
+                        background: #fff3e0;
+                        padding: 12px;
+                        border-radius: 8px;
+                        border-left: 4px solid #ff9800;
+                    }
+                    .correct-answer {
+                        background: #e8f5e9;
+                        padding: 12px;
+                        border-radius: 8px;
+                        border-left: 4px solid #4caf50;
+                    }
+                    .answer-label {
+                        font-size: 12px;
+                        color: #666;
+                        margin-bottom: 5px;
+                        font-weight: bold;
+                    }
+                    .explanation {
+                        margin-top: 12px;
+                        padding: 10px;
+                        background: #e3f2fd;
+                        border-radius: 8px;
+                        font-size: 13px;
+                        color: #1565c0;
+                    }
+                    .footer {
+                        background: #2c3e50;
+                        color: white;
+                        text-align: center;
+                        padding: 20px;
+                        font-size: 12px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="report-container">
+                    <div class="header">
+                        <h1>📝 KẾT QUẢ BÀI KIỂM TRA</h1>
+                        <p>${escapeHtml(quizTitle)}</p>
+                    </div>
+                    
+                    <div class="score-card">
+                        <div class="score-number">${scoreValue}/10</div>
+                        <div>⭐ ${correctCount}/${total} câu đúng (${percentage}%)</div>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card"><div>👤 Học sinh</div><div class="stat-value">${escapeHtml(studentName)}</div></div>
+                        <div class="stat-card"><div>📅 Thời gian</div><div class="stat-value">${submitTime}</div></div>
+                        <div class="stat-card"><div>⚠️ Vi phạm</div><div class="stat-value">${violationCount}/3</div></div>
+                    </div>
+                    
+                    <div class="question-section">
+                        <div class="question-title">📋 CHI TIẾT TỪNG CÂU HỎI</div>
+                        ${studentAnswers.map(ans => `
+                            <div class="question-item">
+                                <div class="question-header">
+                                    <span><strong>Câu ${ans.questionNumber}</strong></span>
+                                    <span class="badge ${ans.isCorrect ? 'badge-correct' : 'badge-wrong'}">
+                                        ${ans.isCorrect ? '✅ ĐÚNG' : '❌ SAI'}
+                                    </span>
+                                </div>
+                                <div class="question-body">
+                                    <div class="question-text">${escapeHtml(ans.questionText)}</div>
+                                    <div class="answer-row">
+                                        <div class="student-answer">
+                                            <div class="answer-label">📖 Câu trả lời của học sinh:</div>
+                                            <div style="color: #e65100; font-weight: 500;">${escapeHtml(ans.userAnswer) || '(Bỏ trống)'}</div>
+                                        </div>
+                                        <div class="correct-answer">
+                                            <div class="answer-label">✅ Đáp án đúng:</div>
+                                            <div style="color: #2e7d32; font-weight: 500;">${escapeHtml(ans.correctAnswer)}</div>
+                                        </div>
+                                    </div>
+                                    ${ans.explanation ? `<div class="explanation"><strong>💡 Giải thích:</strong> ${escapeHtml(ans.explanation)}</div>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="footer">
+                        <p>📧 Email tự động từ Hệ thống Kiểm tra Trực tuyến</p>
+                        <p>© ${new Date().getFullYear()} - Hỗ trợ học tập</p>
+                    </div>
+                </div>
+            </body>
+            </html>`;
+        }
+
         async function submitQuizHandler() {
             if (isQuizSubmitted || !activeQuiz) return;
     
             const questions = activeQuiz.questions;
             if (!questions?.length) return Swal.fire("Lỗi", "Bài kiểm tra không có câu hỏi", "error");
     
-            // Hiển thị loading
             Swal.fire({
                 title: 'Đang chấm điểm...',
                 html: 'Vui lòng chờ trong giây lát',
-                llowOutsideClick: false,
+                allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading(); }
             });
     
             let correctCount = 0;
-            const studentAnswers = []; // Lưu chi tiết câu trả lời của học sinh
+            const studentAnswers = [];
     
             for (let i = 0; i < questions.length; i++) {
                 const q = questions[i];
@@ -518,7 +678,6 @@
                 let correctAnswerText = "";
                 let userAnswerText = "";
         
-                // XỬ LÝ TỪNG LOẠI CÂU HỎI
                 if (q.type === 'multiple_choice' || q.type === 'reading') {
                     const selectedRadio = document.querySelector(`input[name="q${i}"]:checked`);
                     if (selectedRadio && q.options) {
@@ -578,7 +737,6 @@
         
                 if (isCorrect) correctCount++;
         
-                // LƯU CHI TIẾT CÂU TRẢ LỜI
                 studentAnswers.push({
                     questionNumber: i + 1,
                     questionText: q.question,
@@ -588,202 +746,96 @@
                     explanation: q.explain || "Không có giải thích"
                 });
         
-                // HIỂN THỊ KẾT QUẢ TRÊN WEB
                 if (explainDiv) {
                     explainDiv.className = `p-3 rounded-md text-sm mt-2 ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
-                    explainDiv.innerHTML = `<b>${isCorrect ? '✅ Đúng' : '❌ Sai'}</b><br>📖 Đáp án của bạn: ${escapeHtml(userAnswerText)}<br>📖 Đáp án đúng: ${escapeHtml(correctAnswerText)}<br>💡 Giải thích: ${escapeHtml(q.explain || 'Không có giải thích.')}`;
+                    explainDiv.innerHTML = `<b>${isCorrect ? '✅ Đúng' : '❌ Sai'}</b><br>📖 Đáp án đúng: ${escapeHtml(correctAnswerText)}<br>💡 Giải thích: ${escapeHtml(q.explain || 'Không có giải thích.')}`;
                     explainDiv.classList.remove('hidden');
                 }
             }
     
             const total = questions.length;
             const scoreValue = ((correctCount / total) * 10).toFixed(2);
-            const percentage = ((correctCount / total) * 100).toFixed(1);
             const submitTime = new Date().toLocaleString('vi-VN');
     
             isQuizSubmitted = true;
             isQuizActive = false;
             document.getElementById('submit-quiz-btn').classList.add('hidden');
     
-            // XÂY DỰNG NỘI DUNG EMAIL CHI TIẾT
-            function buildEmailContent(isTeacher = false) {
-                let correctIcon = "✅", wrongIcon = "❌";
-        
-                // Tạo bảng chi tiết từng câu
-                let detailsTable = "";
-                studentAnswers.forEach(ans => {
-                    const statusIcon = ans.isCorrect ? correctIcon : wrongIcon;
-                    const statusText = ans.isCorrect ? "ĐÚNG" : "SAI";
-                    const rowColor = ans.isCorrect ? "#e8f5e9" : "#ffebee";
+            // Tạo file HTML báo cáo
+            const reportHTML = generateReportHTML(studentName, activeQuiz.title, scoreValue, total, correctCount, violationCount, studentAnswers, submitTime);
+            const blob = new Blob([reportHTML], { type: 'text/html' });
+            const file = new File([blob], `KetQua_${studentName}_${Date.now()}.html`, { type: 'text/html' });
             
-                    detailsTable += `
-                        <tr style="border-bottom: 1px solid #ddd; background-color: ${rowColor};">
-                            <td style="padding: 12px; text-align: center; font-weight: bold;">${ans.questionNumber}</td>
-                            <td style="padding: 12px;">${escapeHtmlForEmail(ans.questionText)}</td>
-                            <td style="padding: 12px; ${ans.isCorrect ? 'color: #2e7d32;' : 'color: #c62828;'}">${escapeHtmlForEmail(ans.userAnswer)}</td>
-                            <td style="padding: 12px; color: #1565c0;">${escapeHtmlForEmail(ans.correctAnswer)}</td>
-                            <td style="padding: 12px; text-align: center; font-weight: bold;">${statusIcon} ${statusText}</td>
-                        </tr>
-                    `;
-                });
-        
-                return `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <style>
-                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                            .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-                            .header { background: #8D7B68; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-                            .score-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center; }
-                            .score-value { font-size: 48px; font-weight: bold; margin: 10px 0; }
-                            .info-row { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 8px; }
-                            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-                            th { background: #8D7B68; color: white; padding: 12px; text-align: center; }
-                            td { border: 1px solid #ddd; }
-                            .footer { background: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 10px 10px; margin-top: 20px; }
-                            .summary { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="header">
-                                <h2>📝 KẾT QUẢ BÀI KIỂM TRA</h2>
-                                <p>${escapeHtmlForEmail(activeQuiz.title)}</p>
-                            </div>
+            // Đọc file thành base64
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            
+            reader.onload = async function() {
+                const base64Content = reader.result.split(',')[1];
+                
+                try {
+                    // Gửi email cho giáo viên
+                    await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
+                        to_email: "ptquynhnhi05121999@gmail.com",
+                        subject: `📊 Kết quả bài kiểm tra - ${studentName}`,
+                        student_name: studentName,
+                        quiz_title: activeQuiz.title,
+                        score: `${scoreValue}/10 (${correctCount}/${total} câu đúng)`,
+                        violation_count: violationCount,
+                        correct_answers: `${correctCount}/${total}`,
+                        submit_time: submitTime,
+                        attachment: base64Content,
+                        filename: `KetQua_${studentName}_${Date.now()}.html`
+                    });
                     
-                            <div class="score-box">
-                                <div>🎯 ĐIỂM SỐ</div>
-                                <div class="score-value">${scoreValue} / 10</div>
-                                <div>⭐ Tỉ lệ đúng: ${percentage}% (${correctCount}/${total} câu)</div>
-                            </div>
+                    // Hỏi email học sinh
+                    const { value: studentEmail } = await Swal.fire({
+                        title: '📧 Gửi kết quả qua email?',
+                        text: 'Nhập email của bạn để nhận file kết quả chi tiết',
+                        input: 'email',
+                        inputPlaceholder: 'example@email.com',
+                        showCancelButton: true,
+                        confirmButtonText: 'Gửi cho tôi',
+                        cancelButtonText: 'Bỏ qua',
+                        allowOutsideClick: false
+                    });
                     
-                            <div class="info-row">
-                                <strong>👤 HỌC SINH:</strong> ${escapeHtmlForEmail(studentName)}<br>
-                                <strong>📅 THỜI GIAN NỘP:</strong> ${submitTime}<br>
-                                <strong>⚠️ SỐ LẦN VI PHẠM:</strong> ${violationCount}/3
-                            </div>
+                    if (studentEmail && studentEmail.includes('@')) {
+                        await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
+                            to_email: studentEmail,
+                            subject: `🎓 Kết quả bài kiểm tra "${activeQuiz.title}"`,
+                            student_name: studentName,
+                            quiz_title: activeQuiz.title,
+                            score: `${scoreValue}/10`,
+                            violation_count: violationCount,
+                            correct_answers: `${correctCount}/${total}`,
+                            submit_time: submitTime,
+                            attachment: base64Content,
+                            filename: `KetQua_${studentName}_${Date.now()}.html`
+                        });
+                        Swal.fire({
+                            title: "✅ Hoàn thành!",
+                            html: `Điểm: ${scoreValue}/10.<br>📧 Kết quả đã được gửi đến email: ${studentEmail}`,
+                            icon: "success"
+                        });
+                    } else {
+                        Swal.fire({
+                            title: "✅ Hoàn thành!",
+                            html: `Điểm: ${scoreValue}/10.<br>📧 Kết quả đã được gửi đến giáo viên.`,
+                            icon: "success"
+                        });
+                    }
                     
-                            ${!isTeacher ? `
-                            <div class="summary" style="background: #fff3e0;">
-                                <strong>💬 LỜI NHẮN:</strong><br>
-                                Bạn đã hoàn thành bài kiểm tra! Hãy xem chi tiết từng câu bên dưới để rút kinh nghiệm nhé.
-                            </div>
-                            ` : `
-                            <div class="summary" style="background: #fff3e0;">
-                                <strong>📊 TỔNG KẾT GIÁO VIÊN:</strong><br>
-                                Học sinh đã hoàn thành bài với ${correctCount}/${total} câu đúng. Số lần vi phạm: ${violationCount}/3.
-                            </div>
-                            `}
-                    
-                            <h3 style="margin-top: 25px;">📋 CHI TIẾT TỪNG CÂU HỎI</h3>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>STT</th>
-                                        <th>Câu hỏi</th>
-                                        <th>Câu trả lời của học sinh</th>
-                                        <th>Đáp án đúng</th>
-                                        <th>Kết quả</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${detailsTable}
-                                </tbody>
-                            </table>
-                    
-                            <div class="footer">
-                                <p>📧 Email này được gửi tự động từ Hệ thống Kiểm tra Trực tuyến</p>
-                                <p>© ${new Date().getFullYear()} - Hỗ trợ học tập</p>
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                `;
-            }
-    
-    function escapeHtmlForEmail(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
-            .replace(/\n/g, '<br>');
-    }
-    
-    try {
-        // 1. GỬI EMAIL CHO GIÁO VIÊN (email quản trị)
-        await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
-            to_email: "ptquynhnhi05121999@gmail.com",
-            subject: `📊 Kết quả bài kiểm tra - ${studentName}`,
-            student_name: studentName,
-            quiz_title: activeQuiz.title,
-            score: `${scoreValue}/10 (${correctCount}/${total} câu đúng)`,
-            violation_count: violationCount,
-            correct_answers: `${correctCount}/${total}`,
-            detail_html: buildEmailContent(true),
-            submit_time: submitTime
-        });
-        
-        // 2. GỬI EMAIL CHO HỌC SINH (nếu học sinh cung cấp email - có thể hỏi thêm)
-        // Hiển thị dialog nhập email học sinh (tuỳ chọn)
-        const { value: studentEmail } = await Swal.fire({
-            title: '📧 Nhận kết quả qua email?',
-            text: 'Nhập email của bạn để nhận chi tiết bài làm (hoặc bỏ qua)',
-            input: 'email',
-            inputPlaceholder: 'example@email.com',
-            showCancelButton: true,
-            confirmButtonText: 'Gửi cho tôi',
-            cancelButtonText: 'Bỏ qua',
-            allowOutsideClick: false
-        });
-        
-        if (studentEmail && studentEmail.includes('@')) {
-            try {
-                // Tạo template riêng cho học sinh hoặc dùng chung
-                await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
-                    to_email: studentEmail,
-                    subject: `🎓 Kết quả bài kiểm tra "${activeQuiz.title}" - ${studentName}`,
-                    student_name: studentName,
-                    quiz_title: activeQuiz.title,
-                    score: `${scoreValue}/10 (${correctCount}/${total} câu đúng)`,
-                    violation_count: violationCount,
-                    correct_answers: `${correctCount}/${total}`,
-                    detail_html: buildEmailContent(false),
-                    submit_time: submitTime
-                });
-                Swal.fire({
-                    title: "✅ Hoàn thành!",
-                    html: `Bạn đúng ${correctCount}/${total} câu. Điểm: ${scoreValue}/10.<br>📧 Kết quả đã được gửi đến email: ${studentEmail}`,
-                    icon: "success"
-                });
-            } catch (err) {
-                Swal.fire({
-                    title: "🎉 Nộp bài thành công!",
-                    html: `Điểm: ${scoreValue}/10.<br>⚠️ Không thể gửi email đến ${studentEmail}. Vui lòng kiểm tra lại địa chỉ email.`,
-                    icon: "warning"
-                });
-            }
-        } else {
-            Swal.fire({
-                title: "✅ Hoàn thành!",
-                html: `Bạn đúng ${correctCount}/${total} câu. Điểm: ${scoreValue}/10.<br>📧 Kết quả đã được gửi đến giáo viên.`,
-                icon: "success"
-            });
+                } catch (err) {
+                    console.error("Lỗi gửi email:", err);
+                    Swal.fire({
+                        title: "🎉 Nộp bài thành công!",
+                        html: `Điểm: ${scoreValue}/10.<br>⚠️ Không thể gửi email. Kiểm tra lại kết nối mạng.`,
+                        icon: "warning"
+                    });
+                }
+            };
         }
-        
-    } catch (err) {
-        console.error("Lỗi gửi email:", err);
-        Swal.fire({
-            title: "🎉 Nộp bài thành công!",
-            html: `Điểm: ${scoreValue}/10.<br>⚠️ Không thể gửi email. Kiểm tra lại kết nối mạng.`,
-            icon: "warning"
-        });
-    }
-}
 
         function renderGradeButtons() {
             gradeSelector.innerHTML = '';
@@ -972,7 +1024,6 @@
             document.getElementById('btn-cancel-edit').classList.add('hidden'); 
         };
         
-        // Hàm xem trước JSON
         window.previewJson = () => {
             const fileInput = document.getElementById('quiz-json-file');
             if(!fileInput.files || !fileInput.files[0]) {
@@ -998,7 +1049,6 @@
             document.getElementById('json-preview-modal').classList.add('hidden');
         };
         
-        // Cập nhật hàm load file - hỗ trợ mọi cấu trúc JSON
         function setupFileLoader() {
             const fileInput = document.getElementById('quiz-json-file');
             if(fileInput) {
@@ -1009,7 +1059,6 @@
                     reader.onload = (ev) => {
                         try {
                             const parsed = JSON.parse(ev.target.result);
-                            // Kiểm tra nếu là mảng các câu hỏi
                             if(Array.isArray(parsed)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed, null, 2);
                                 Swal.fire({
@@ -1020,7 +1069,6 @@
                                     showConfirmButton: false
                                 });
                             } 
-                            // Nếu là object có chứa questions array
                             else if(parsed.questions && Array.isArray(parsed.questions)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed.questions, null, 2);
                                 Swal.fire({
@@ -1032,7 +1080,7 @@
                                 });
                             }
                             else {
-                                throw new Error("Cấu trúc JSON không hợp lệ. Cần là mảng các câu hỏi hoặc object có trường 'questions'.");
+                                throw new Error("Cấu trúc JSON không hợp lệ.");
                             }
                         } catch(err) {
                             Swal.fire({
