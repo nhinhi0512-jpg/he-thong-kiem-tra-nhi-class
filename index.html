@@ -123,58 +123,6 @@
             white-space: pre-wrap;
             word-break: break-word;
         }
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            flex-direction: column;
-            color: white;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #8D7B68;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .result-summary {
-            background: linear-gradient(135deg, #8D7B68 0%, #6b5b4a 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 16px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .result-score {
-            font-size: 48px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        .result-stats {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        .result-stat {
-            background: rgba(255,255,255,0.2);
-            padding: 10px 20px;
-            border-radius: 30px;
-        }
     </style>
 </head>
 <body class="antialiased min-h-screen pb-12">
@@ -276,6 +224,7 @@
                         </div>
                     </div>
 
+                    <!-- KHU VỰC UPLOAD JSON MỚI - HỖ TRỢ BẤT KỲ FILE JSON NÀO -->
                     <div class="p-5 border-2 border-dashed border-amber-800/40 rounded-lg bg-amber-50/50">
                         <label class="block text-sm font-bold text-amber-900 mb-2">📂 Tải lên file JSON (hỗ trợ mọi cấu trúc đúng định dạng)</label>
                         <div class="flex gap-3 flex-wrap">
@@ -285,6 +234,7 @@
                         <p class="text-xs text-gray-500 mt-2">✓ Hỗ trợ cấu trúc JSON bất kỳ (multiple_choice, cloze, reorder, reading) <br> ✓ Tự động phát hiện và hiển thị đúng định dạng</p>
                     </div>
 
+                    <!-- Modal xem trước JSON -->
                     <div id="json-preview-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
                         <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl">
                             <div class="flex justify-between items-center mb-4">
@@ -395,35 +345,46 @@
             adminApp.classList.add('hidden');
         }
 
+        // ========== HÀM TỰ ĐỘNG XUỐNG DÒNG ==========
         function autoFormatLineBreaks(text) {
             if (!text) return '';
+            
             let result = text;
+            
+            // Chuyển đổi \n thành <br>
             result = result.replace(/\n/g, '<br>');
+            
+            // Xử lý a., b., c., d. (thường)
             result = result.replace(/([a-d]\.)\s+/gi, '<br>$1 ');
+            
+            // Xử lý A., B., C., D. (hoa)
             result = result.replace(/([A-D]\.)\s+/g, '<br>$1 ');
+            
+            // Xử lý số 1., 2., 3., 4.,...
             result = result.replace(/(\d+\.)\s+/g, '<br>$1 ');
+            
+            // Xử lý e., f., g. (mở rộng)
             result = result.replace(/([e-g]\.)\s+/gi, '<br>$1 ');
+            
+            // Xử lý E., F., G.
             result = result.replace(/([E-G]\.)\s+/g, '<br>$1 ');
+            
+            // Loại bỏ <br> ở đầu chuỗi nếu có
             result = result.replace(/^<br>/, '');
+            
+            // Xử lý trường hợp <br><br> thành <br> (tránh xuống dòng quá nhiều)
             result = result.replace(/(<br>){3,}/g, '<br><br>');
+            
             return result;
         }
 
-        function escapeHtml(str) { 
-            if(!str) return ''; 
-            return String(str).replace(/[&<>]/g, function(m){
-                if(m === '&') return '&amp;'; 
-                if(m === '<') return '&lt;'; 
-                if(m === '>') return '&gt;'; 
-                return m;
-            }); 
-        }
-
+        // Hàm escape HTML kết hợp với auto format
         function escapeAndFormat(str) {
             if (!str) return '';
             return autoFormatLineBreaks(escapeHtml(str));
         }
 
+        // Hàm xử lý highlight từ trong câu hỏi (có hỗ trợ format)
         function renderQuestionText(question, highlightWord) {
             if (!highlightWord) return escapeAndFormat(question);
             const regex = new RegExp(`(${highlightWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
@@ -431,6 +392,7 @@
             return formattedQuestion.replace(regex, `<span class="highlight-word">$1</span>`);
         }
 
+        // Hàm render câu hỏi hỗ trợ passage và highlight
         let lastPassageForCloze = null;
         let lastPassageForReading = null;
 
@@ -438,6 +400,7 @@
             const block = document.createElement('div');
             block.className = "p-4 rounded-xl bg-stone-50 border border-stone-200 mb-4";
             
+            // Xử lý passage cho cloze (chỉ hiển thị khi passage khác với câu trước)
             if (q.type === 'cloze' && q.passage && lastPassageForCloze !== q.passage) {
                 const passageDiv = document.createElement('div');
                 passageDiv.className = 'passage-box';
@@ -446,6 +409,7 @@
                 lastPassageForCloze = q.passage;
             }
             
+            // Xử lý passage cho reading (chỉ hiển thị khi passage khác với câu trước)
             if (q.type === 'reading' && q.passage && lastPassageForReading !== q.passage) {
                 const passageDiv = document.createElement('div');
                 passageDiv.className = 'passage-box';
@@ -475,6 +439,7 @@
             } 
             else if (q.type === 'cloze') {
                 if (q.options && Array.isArray(q.options)) {
+                    // Hiển thị dạng trắc nghiệm cho cloze
                     questionHtml += `<div class="space-y-2 ml-2">`;
                     q.options.forEach((opt, optIdx) => {
                         const letter = String.fromCharCode(65 + optIdx);
@@ -518,6 +483,7 @@
             const container = document.getElementById('questions-container');
             container.innerHTML = "";
             
+            // Reset lại biến nhớ passage
             lastPassageForCloze = null;
             lastPassageForReading = null;
             
@@ -528,118 +494,26 @@
             document.getElementById('submit-quiz-btn').classList.remove('hidden');
         }
 
-        // HÀM TẠO BÁO CÁO HTML CHO GIÁO VIÊN
-        function generateReportHTML(studentName, quizTitle, scoreValue, total, correctCount, violationCount, studentAnswers, submitTime) {
-            const percentage = ((correctCount / total) * 100).toFixed(1);
-            
-            return `<!DOCTYPE html>
-            <html>
-            <head><meta charset="UTF-8"><title>KetQua_${studentName}</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; padding: 40px; }
-                .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
-                .header { background: linear-gradient(135deg, #8D7B68 0%, #6b5b4a 100%); color: white; padding: 40px; text-align: center; }
-                .score-card { background: white; margin: -30px 30px 30px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-                .score-number { font-size: 64px; font-weight: bold; color: #8D7B68; }
-                .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; padding: 0 30px 30px; }
-                .stat-card { background: #f8f9fa; padding: 20px; border-radius: 15px; text-align: center; border-left: 4px solid #8D7B68; }
-                .question-section { padding: 30px; }
-                .question-title { font-size: 24px; font-weight: bold; color: #8D7B68; margin-bottom: 20px; border-bottom: 3px solid #8D7B68; }
-                .question-item { border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
-                .question-header { padding: 15px 20px; background: #f8f9fa; display: flex; justify-content: space-between; }
-                .badge-correct { background: #4caf50; color: white; padding: 5px 12px; border-radius: 20px; }
-                .badge-wrong { background: #f44336; color: white; padding: 5px 12px; border-radius: 20px; }
-                .question-body { padding: 20px; }
-                .question-text { background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
-                .answer-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-                .student-answer { background: #fff3e0; padding: 12px; border-radius: 8px; border-left: 4px solid #ff9800; }
-                .correct-answer { background: #e8f5e9; padding: 12px; border-radius: 8px; border-left: 4px solid #4caf50; }
-                .footer { background: #2c3e50; color: white; text-align: center; padding: 20px; }
-            </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header"><h1>📝 KẾT QUẢ BÀI KIỂM TRA</h1><p>${escapeHtml(quizTitle)}</p></div>
-                    <div class="score-card"><div class="score-number">${scoreValue}/10</div><div>⭐ ${correctCount}/${total} câu đúng (${percentage}%)</div></div>
-                    <div class="stats">
-                        <div class="stat-card"><div>👤 Học sinh</div><div style="font-size:20px;font-weight:bold">${escapeHtml(studentName)}</div></div>
-                        <div class="stat-card"><div>📅 Thời gian</div><div style="font-size:20px;font-weight:bold">${submitTime}</div></div>
-                        <div class="stat-card"><div>⚠️ Vi phạm</div><div style="font-size:20px;font-weight:bold">${violationCount}/3</div></div>
-                    </div>
-                    <div class="question-section">
-                        <div class="question-title">📋 CHI TIẾT TỪNG CÂU</div>
-                        ${studentAnswers.map(ans => `
-                            <div class="question-item">
-                                <div class="question-header">
-                                    <span><strong>Câu ${ans.questionNumber}</strong></span>
-                                    <span class="${ans.isCorrect ? 'badge-correct' : 'badge-wrong'}">${ans.isCorrect ? '✅ ĐÚNG' : '❌ SAI'}</span>
-                                </div>
-                                <div class="question-body">
-                                    <div class="question-text">${escapeHtml(ans.questionText)}</div>
-                                    <div class="answer-row">
-                                        <div class="student-answer"><strong>📖 Câu trả lời:</strong><br>${escapeHtml(ans.userAnswer) || '(Bỏ trống)'}</div>
-                                        <div class="correct-answer"><strong>✅ Đáp án đúng:</strong><br>${escapeHtml(ans.correctAnswer)}</div>
-                                    </div>
-                                    ${ans.explanation ? `<div style="margin-top:12px;padding:10px;background:#e3f2fd;border-radius:8px"><strong>💡 Giải thích:</strong> ${escapeHtml(ans.explanation)}</div>` : ''}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="footer"><p>📧 Email tự động từ Hệ thống Kiểm tra Trực tuyến</p></div>
-                </div>
-            </body>
-            </html>`;
-        }
-
-        // HÀM UPLOAD FILE LÊN tmpfiles.org
-        async function uploadToTempStorage(htmlContent, filename) {
-            const formData = new FormData();
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            formData.append('file', blob, filename);
-            
-            const response = await fetch('https://tmpfiles.org/api/v1/upload', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!response.ok) throw new Error('Upload failed');
-            const data = await response.json();
-            return data.data.url;
-        }
-
-        // HÀM SUBMIT - GỬI EMAIL CHO GIÁO VIÊN KÈM LINK, HỌC SINH CHỈ XEM KẾT QUẢ
         async function submitQuizHandler() {
             if (isQuizSubmitted || !activeQuiz) return;
-    
             const questions = activeQuiz.questions;
             if (!questions?.length) return Swal.fire("Lỗi", "Bài kiểm tra không có câu hỏi", "error");
-    
-            // Hiển thị loading
-            let loadingDiv = document.createElement('div');
-            loadingDiv.className = 'loading-overlay';
-            loadingDiv.innerHTML = '<div class="spinner"></div><div>Đang chấm điểm...</div>';
-            document.body.appendChild(loadingDiv);
-    
+            
             let correctCount = 0;
-            const studentAnswers = [];
-    
+            
             for (let i = 0; i < questions.length; i++) {
                 const q = questions[i];
                 const explainDiv = document.getElementById(`explain-${i}`);
                 let isCorrect = false;
                 let correctAnswerText = "";
-                let userAnswerText = "";
-        
+                
                 if (q.type === 'multiple_choice' || q.type === 'reading') {
                     const selectedRadio = document.querySelector(`input[name="q${i}"]:checked`);
                     if (selectedRadio && q.options) {
                         const selectedVal = parseInt(selectedRadio.value);
                         isCorrect = (selectedVal === q.correct);
-                        userAnswerText = q.options[selectedVal] || "Không chọn";
                         correctAnswerText = q.options[q.correct] || "Không xác định";
                     } else {
-                        userAnswerText = "Chưa chọn đáp án";
                         correctAnswerText = q.options?.[q.correct] || "Chưa có đáp án";
                     }
                 } 
@@ -648,17 +522,15 @@
                     if (selectedRadio && q.options) {
                         const selectedVal = parseInt(selectedRadio.value);
                         isCorrect = (selectedVal === q.correct);
-                        userAnswerText = q.options[selectedVal] || "Không chọn";
                         correctAnswerText = q.options[q.correct] || "Không xác định";
                     } else {
                         const inputEl = document.getElementById(`input-${i}`);
                         if (inputEl) {
-                            userAnswerText = inputEl.value.trim() || "(Bỏ trống)";
+                            const userAnswer = inputEl.value.trim().toLowerCase();
                             const correctVal = (q.correct || "").toString().toLowerCase();
-                            isCorrect = (userAnswerText.toLowerCase() === correctVal);
+                            isCorrect = (userAnswer === correctVal);
                             correctAnswerText = q.correct;
                         } else {
-                            userAnswerText = "(Không nhập)";
                             correctAnswerText = q.correct;
                         }
                     }
@@ -666,105 +538,48 @@
                 else if (q.type === 'reorder') {
                     const inputEl = document.getElementById(`input-${i}`);
                     if (inputEl) {
-                        userAnswerText = inputEl.value.trim() || "(Bỏ trống)";
+                        const userAnswer = inputEl.value.trim().toLowerCase();
                         const correctSentence = (Array.isArray(q.correct) ? q.correct.join(' ') : q.correct).toLowerCase();
-                        isCorrect = (userAnswerText.toLowerCase() === correctSentence);
+                        isCorrect = (userAnswer === correctSentence);
                         correctAnswerText = Array.isArray(q.correct) ? q.correct.join(' ') : q.correct;
-                    } else {
-                        userAnswerText = "(Không nhập)";
-                        correctAnswerText = q.correct;
                     }
                 }
                 else {
                     const inputEl = document.getElementById(`input-${i}`);
                     if (inputEl) {
-                        userAnswerText = inputEl.value.trim() || "(Bỏ trống)";
+                        const userAnswer = inputEl.value.trim().toLowerCase();
                         const correctAns = q.correct ? q.correct.toString().toLowerCase() : "";
-                        isCorrect = (userAnswerText.toLowerCase() === correctAns);
-                        correctAnswerText = q.correct;
-                    } else {
-                        userAnswerText = "(Không nhập)";
+                        isCorrect = (userAnswer === correctAns);
                         correctAnswerText = q.correct;
                     }
                 }
-        
+                
                 if (isCorrect) correctCount++;
-        
-                studentAnswers.push({
-                    questionNumber: i + 1,
-                    questionText: q.question,
-                    userAnswer: userAnswerText,
-                    correctAnswer: correctAnswerText,
-                    isCorrect: isCorrect,
-                    explanation: q.explain || "Không có giải thích"
-                });
-        
+                
                 if (explainDiv) {
                     explainDiv.className = `p-3 rounded-md text-sm mt-2 ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+                    explainDiv.innerHTML = `<b>${isCorrect ? '✅ Đúng' : '❌ Sai'}</b><br>📖 Đáp án đúng: ${escapeHtml(correctAnswerText)}<br>💡 Giải thích: ${escapeHtml(q.explain || 'Không có giải thích.')}`;
                     explainDiv.classList.remove('hidden');
                 }
             }
-    
+            
             const total = questions.length;
             const scoreValue = ((correctCount / total) * 10).toFixed(2);
-            const percentage = ((correctCount / total) * 100).toFixed(1);
-            const submitTime = new Date().toLocaleString('vi-VN');
-    
             isQuizSubmitted = true;
             isQuizActive = false;
             document.getElementById('submit-quiz-btn').classList.add('hidden');
             
-            // Xóa loading
-            document.body.removeChild(loadingDiv);
-    
-            // Tạo báo cáo HTML (CHỈ GỬI CHO GIÁO VIÊN)
-            const reportHTML = generateReportHTML(studentName, activeQuiz.title, scoreValue, total, correctCount, violationCount, studentAnswers, submitTime);
-            const filename = `BaoCao_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.html`;
-            
-            // Hiển thị kết quả cho học sinh (CHỈ XEM, KHÔNG TẢI)
-            let resultHtml = `
-                <div class="result-summary">
-                    <div>📝 KẾT QUẢ BÀI KIỂM TRA</div>
-                    <div class="result-score">${scoreValue}/10</div>
-                    <div class="result-stats">
-                        <div class="result-stat">✅ Đúng: ${correctCount} câu</div>
-                        <div class="result-stat">❌ Sai: ${total - correctCount} câu</div>
-                        <div class="result-stat">📊 Tỉ lệ: ${percentage}%</div>
-                        <div class="result-stat">⚠️ Vi phạm: ${violationCount}/3</div>
-                    </div>
-                    <div style="margin-top: 20px; font-size: 14px; opacity: 0.8;">
-                        📧 Kết quả chi tiết đã được gửi đến giáo viên.
-                    </div>
-                </div>
-            `;
-            
-            Swal.fire({
-                title: "🎉 Nộp bài thành công!",
-                html: resultHtml,
-                icon: "success",
-                showConfirmButton: true,
-                confirmButtonText: "Đóng",
-                width: "550px"
-            });
-            
-            // Gửi email cho giáo viên (có kèm link tải file)
             try {
-                const downloadLink = await uploadToTempStorage(reportHTML, filename);
-                
-                await emailjs.send("service_0jf32ws", "template_6jz1wdc", {
+                await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
                     student_name: studentName,
                     quiz_title: activeQuiz.title,
-                    score: `${scoreValue}/10 (${correctCount}/${total} câu đúng - ${percentage}%)`,
+                    score: `${scoreValue}/10`,
                     violation_count: violationCount,
-                    correct_answers: `${correctCount}/${total}`,
-                    submit_time: submitTime,
-                    download_link: downloadLink,
-                    filename: filename
+                    correct_answers: `${correctCount}/${total}`
                 });
-                console.log("Email đã gửi thành công đến giáo viên");
+                Swal.fire("✅ Hoàn thành!", `Bạn đúng ${correctCount}/${total} câu. Điểm: ${scoreValue}/10. Kết quả đã gửi email.`, "success");
             } catch (err) {
-                console.error("Lỗi gửi email:", err);
-                // Không hiển thị lỗi cho học sinh
+                Swal.fire("🎉 Nộp bài thành công!", `Điểm: ${scoreValue}/10.`, "info");
             }
         }
 
@@ -955,6 +770,7 @@
             document.getElementById('btn-cancel-edit').classList.add('hidden'); 
         };
         
+        // Hàm xem trước JSON
         window.previewJson = () => {
             const fileInput = document.getElementById('quiz-json-file');
             if(!fileInput.files || !fileInput.files[0]) {
@@ -980,6 +796,7 @@
             document.getElementById('json-preview-modal').classList.add('hidden');
         };
         
+        // Cập nhật hàm load file - hỗ trợ mọi cấu trúc JSON
         function setupFileLoader() {
             const fileInput = document.getElementById('quiz-json-file');
             if(fileInput) {
@@ -990,6 +807,7 @@
                     reader.onload = (ev) => {
                         try {
                             const parsed = JSON.parse(ev.target.result);
+                            // Kiểm tra nếu là mảng các câu hỏi
                             if(Array.isArray(parsed)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed, null, 2);
                                 Swal.fire({
@@ -1000,6 +818,7 @@
                                     showConfirmButton: false
                                 });
                             } 
+                            // Nếu là object có chứa questions array
                             else if(parsed.questions && Array.isArray(parsed.questions)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed.questions, null, 2);
                                 Swal.fire({
@@ -1024,6 +843,16 @@
                     reader.readAsText(file);
                 };
             }
+        }
+        
+        function escapeHtml(str) { 
+            if(!str) return ''; 
+            return String(str).replace(/[&<>]/g, function(m){
+                if(m === '&') return '&amp;'; 
+                if(m === '<') return '&lt;'; 
+                if(m === '>') return '&gt;'; 
+                return m;
+            }); 
         }
 
         document.getElementById('submit-quiz-btn')?.addEventListener('click', submitQuizHandler);
