@@ -552,7 +552,7 @@
             return data.data.url;
         }
 
-        // HÀM SUBMIT ĐÃ SỬA - BỎ to_email
+        // HÀM SUBMIT ĐÃ SỬA - BỎ PHẦN HỎI EMAIL HỌC SINH
         async function submitQuizHandler() {
             if (isQuizSubmitted || !activeQuiz) return;
     
@@ -667,7 +667,7 @@
                 loadingDiv.innerHTML = '<div class="spinner"></div><div>Đang tạo báo cáo...</div>';
                 const downloadLink = await uploadToTempStorage(reportHTML, filename);
                 
-                // Gửi email cho giáo viên (ĐÃ BỎ to_email)
+                // Gửi email cho giáo viên
                 loadingDiv.innerHTML = '<div class="spinner"></div><div>Đang gửi kết quả...</div>';
                 
                 await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
@@ -681,14 +681,25 @@
                     filename: filename
                 });
                 
-                    // Hiển thị link tải trực tiếp cho học sinh
-                    Swal.fire({
-                        title: "✅ Hoàn thành!",
-                        html: `Điểm: ${scoreValue}/10.<br><br>📎 <a href="${downloadLink}" target="_blank" style="color:#8D7B68;font-weight:bold">Click đây để tải báo cáo chi tiết</a><br><br>📧 Kết quả cũng đã được gửi đến giáo viên.`,
-                        icon: "success",
-                        showConfirmButton: true
-                    });
-                }
+                // Hiển thị link tải trực tiếp cho học sinh (KHÔNG hỏi email)
+                Swal.fire({
+                    title: "✅ Hoàn thành!",
+                    html: `<div style="text-align: center;">
+                        <div style="font-size: 36px; font-weight: bold; color: #8D7B68; margin: 10px 0;">${scoreValue}/10</div>
+                        <div style="margin: 10px 0;">⭐ ${correctCount}/${total} câu đúng</div>
+                        <hr style="margin: 15px 0;">
+                        <a href="${downloadLink}" target="_blank" style="display: inline-block; background: #8D7B68; color: white; padding: 10px 20px; border-radius: 30px; text-decoration: none; margin: 10px 0; font-weight: bold;">
+                            📥 Tải báo cáo chi tiết
+                        </a>
+                        <p style="font-size: 12px; color: #666; margin-top: 15px;">
+                            📧 Kết quả đã được gửi đến giáo viên.
+                        </p>
+                    </div>`,
+                    icon: "success",
+                    showConfirmButton: true,
+                    confirmButtonText: "Đóng",
+                    width: "500px"
+                });
                 
             } catch (err) {
                 console.error("Lỗi:", err);
@@ -698,7 +709,17 @@
                 
                 Swal.fire({
                     title: "🎉 Nộp bài thành công!",
-                    html: `Điểm: ${scoreValue}/10.<br><br>📎 <a href="${localUrl}" download="${filename}" style="color:#8D7B68;font-weight:bold">Click đây để tải báo cáo chi tiết</a><br><br>⚠️ Không thể gửi email. Hãy tải file này về máy.`,
+                    html: `<div style="text-align: center;">
+                        <div style="font-size: 36px; font-weight: bold; color: #8D7B68; margin: 10px 0;">${scoreValue}/10</div>
+                        <div style="margin: 10px 0;">⭐ ${correctCount}/${total} câu đúng</div>
+                        <hr style="margin: 15px 0;">
+                        <a href="${localUrl}" download="${filename}" style="display: inline-block; background: #8D7B68; color: white; padding: 10px 20px; border-radius: 30px; text-decoration: none; margin: 10px 0; font-weight: bold;">
+                            📥 Tải báo cáo chi tiết
+                        </a>
+                        <p style="font-size: 12px; color: #666; margin-top: 15px;">
+                            ⚠️ Không thể gửi email. Hãy tải file này về máy.
+                        </p>
+                    </div>`,
                     icon: "success"
                 });
             }
