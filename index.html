@@ -150,6 +150,31 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .result-summary {
+            background: linear-gradient(135deg, #8D7B68 0%, #6b5b4a 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .result-score {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .result-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .result-stat {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
     </style>
 </head>
 <body class="antialiased min-h-screen pb-12">
@@ -162,6 +187,7 @@
     </header>
 
     <main class="max-w-5xl mx-auto px-4">
+        <!-- Giao diện Học sinh -->
         <div id="student-app" class="space-y-6">
             <div class="card p-6 rounded-xl shadow-sm">
                 <h2 class="text-xl font-bold mb-4">📚 Chọn Khối Lớp Của Bạn</h2>
@@ -176,6 +202,7 @@
                 <div id="quiz-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
             </div>
 
+            <!-- Phần làm bài -->
             <section id="quiz-attempt-section" class="hidden card p-5 md:p-6 rounded-xl shadow-md">
                 <div id="violation-notice" class="bg-red-50 border-l-4 border-red-500 p-4 mb-5 rounded-md">
                     <p class="text-red-700 font-bold">⚠️ QUY ĐỊNH LÀM BÀI:</p>
@@ -194,6 +221,7 @@
             </section>
         </div>
 
+        <!-- Modal xác nhận -->
         <div id="confirm-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
             <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                 <div class="flex items-center gap-3 text-amber-600"><span class="text-3xl">⚠️</span><h3 class="text-xl font-bold">Thoát bài kiểm tra?</h3></div>
@@ -202,6 +230,7 @@
             </div>
         </div>
 
+        <!-- Giao diện Admin -->
         <div id="admin-app" class="hidden space-y-6">
             <div id="admin-auth" class="card p-8 rounded-xl text-center max-w-md mx-auto my-12 shadow-lg">
                 <h2 class="text-2xl font-bold mb-4">🔐 Khu vực Giáo viên</h2>
@@ -248,17 +277,18 @@
                     </div>
 
                     <div class="p-5 border-2 border-dashed border-amber-800/40 rounded-lg bg-amber-50/50">
-                        <label class="block text-sm font-bold text-amber-900 mb-2">📂 Tải lên file JSON</label>
+                        <label class="block text-sm font-bold text-amber-900 mb-2">📂 Tải lên file JSON (hỗ trợ mọi cấu trúc đúng định dạng)</label>
                         <div class="flex gap-3 flex-wrap">
                             <input type="file" id="quiz-json-file" accept=".json" class="block text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-amber-100 file:text-amber-800 file:cursor-pointer hover:file:bg-amber-200">
-                            <button type="button" id="preview-json-btn" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700">👁️ Xem trước</button>
+                            <button type="button" id="preview-json-btn" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700">👁️ Xem trước nội dung</button>
                         </div>
+                        <p class="text-xs text-gray-500 mt-2">✓ Hỗ trợ cấu trúc JSON bất kỳ (multiple_choice, cloze, reorder, reading) <br> ✓ Tự động phát hiện và hiển thị đúng định dạng</p>
                     </div>
 
                     <div id="json-preview-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
                         <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xl font-bold">🔍 Xem trước JSON</h3>
+                                <h3 class="text-xl font-bold">🔍 Xem trước nội dung JSON</h3>
                                 <button onclick="window.closeJsonPreview()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
                             </div>
                             <div id="json-preview-content" class="json-preview"></div>
@@ -270,12 +300,35 @@
 
                     <div>
                         <p class="font-bold mb-2">📝 Nội dung câu hỏi (JSON)</p>
-                        <textarea id="quiz-questions-json" rows="10" class="w-full font-mono text-sm bg-gray-50"></textarea>
+                        <textarea id="quiz-questions-json" rows="10" class="w-full font-mono text-sm bg-gray-50" placeholder='[
+  {
+    "type": "multiple_choice",
+    "question": "Câu hỏi trắc nghiệm?",
+    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+    "correct": 0,
+    "highlight": "từ_cần_gạch_chân",
+    "explain": "Giải thích đáp án đúng"
+  },
+  {
+    "type": "cloze",
+    "passage": "Đoạn văn có chỗ trống (26) ______",
+    "question": "Câu hỏi điền từ",
+    "correct": "đáp án đúng",
+    "explain": "Giải thích tại sao"
+  },
+  {
+    "type": "reorder",
+    "question": "Sắp xếp các từ sau thành câu:",
+    "words": ["từ1", "từ2", "từ3"],
+    "correct": ["từ1", "từ2", "từ3"],
+    "explain": "Giải thích cấu trúc câu"
+  }
+]'></textarea>
                     </div>
 
                     <div class="flex gap-3 justify-end">
                         <button onclick="window.cancelEdit()" id="btn-cancel-edit" class="hidden px-5 py-2 bg-gray-300 rounded-lg font-semibold">Hủy</button>
-                        <button onclick="window.saveQuiz()" class="btn-primary px-6 py-2 rounded-lg font-semibold">💾 Lưu bài</button>
+                        <button onclick="window.saveQuiz()" class="btn-primary px-6 py-2 rounded-lg font-semibold">💾 Lưu bài kiểm tra</button>
                     </div>
                 </div>
 
@@ -349,7 +402,10 @@
             result = result.replace(/([a-d]\.)\s+/gi, '<br>$1 ');
             result = result.replace(/([A-D]\.)\s+/g, '<br>$1 ');
             result = result.replace(/(\d+\.)\s+/g, '<br>$1 ');
+            result = result.replace(/([e-g]\.)\s+/gi, '<br>$1 ');
+            result = result.replace(/([E-G]\.)\s+/g, '<br>$1 ');
             result = result.replace(/^<br>/, '');
+            result = result.replace(/(<br>){3,}/g, '<br><br>');
             return result;
         }
 
@@ -385,7 +441,7 @@
             if (q.type === 'cloze' && q.passage && lastPassageForCloze !== q.passage) {
                 const passageDiv = document.createElement('div');
                 passageDiv.className = 'passage-box';
-                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN:</div> ${escapeAndFormat(q.passage)}`;
+                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN (dùng cho câu 26-30):</div> ${escapeAndFormat(q.passage)}`;
                 block.appendChild(passageDiv);
                 lastPassageForCloze = q.passage;
             }
@@ -393,7 +449,7 @@
             if (q.type === 'reading' && q.passage && lastPassageForReading !== q.passage) {
                 const passageDiv = document.createElement('div');
                 passageDiv.className = 'passage-box';
-                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN:</div> ${escapeAndFormat(q.passage)}`;
+                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN (dùng cho câu 31-35):</div> ${escapeAndFormat(q.passage)}`;
                 block.appendChild(passageDiv);
                 lastPassageForReading = q.passage;
             }
@@ -472,7 +528,7 @@
             document.getElementById('submit-quiz-btn').classList.remove('hidden');
         }
 
-        // HÀM TẠO BÁO CÁO HTML
+        // HÀM TẠO BÁO CÁO HTML CHO GIÁO VIÊN
         function generateReportHTML(studentName, quizTitle, scoreValue, total, correctCount, violationCount, studentAnswers, submitTime) {
             const percentage = ((correctCount / total) * 100).toFixed(1);
             
@@ -552,7 +608,7 @@
             return data.data.url;
         }
 
-        // HÀM SUBMIT ĐÃ SỬA - BỎ PHẦN HỎI EMAIL HỌC SINH
+        // HÀM SUBMIT - GỬI EMAIL CHO GIÁO VIÊN KÈM LINK, HỌC SINH CHỈ XEM KẾT QUẢ
         async function submitQuizHandler() {
             if (isQuizSubmitted || !activeQuiz) return;
     
@@ -562,7 +618,7 @@
             // Hiển thị loading
             let loadingDiv = document.createElement('div');
             loadingDiv.className = 'loading-overlay';
-            loadingDiv.innerHTML = '<div class="spinner"></div><div>Đang xử lý bài làm...</div>';
+            loadingDiv.innerHTML = '<div class="spinner"></div><div>Đang chấm điểm...</div>';
             document.body.appendChild(loadingDiv);
     
             let correctCount = 0;
@@ -645,87 +701,71 @@
         
                 if (explainDiv) {
                     explainDiv.className = `p-3 rounded-md text-sm mt-2 ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
-                    explainDiv.innerHTML = `<b>${isCorrect ? '✅ Đúng' : '❌ Sai'}</b><br>📖 Đáp án đúng: ${escapeHtml(correctAnswerText)}<br>💡 Giải thích: ${escapeHtml(q.explain || 'Không có giải thích.')}`;
                     explainDiv.classList.remove('hidden');
                 }
             }
     
             const total = questions.length;
             const scoreValue = ((correctCount / total) * 10).toFixed(2);
+            const percentage = ((correctCount / total) * 100).toFixed(1);
             const submitTime = new Date().toLocaleString('vi-VN');
     
             isQuizSubmitted = true;
             isQuizActive = false;
             document.getElementById('submit-quiz-btn').classList.add('hidden');
-    
-            // Tạo báo cáo HTML
-            const reportHTML = generateReportHTML(studentName, activeQuiz.title, scoreValue, total, correctCount, violationCount, studentAnswers, submitTime);
-            const filename = `KetQua_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.html`;
             
+            // Xóa loading
+            document.body.removeChild(loadingDiv);
+    
+            // Tạo báo cáo HTML (CHỈ GỬI CHO GIÁO VIÊN)
+            const reportHTML = generateReportHTML(studentName, activeQuiz.title, scoreValue, total, correctCount, violationCount, studentAnswers, submitTime);
+            const filename = `BaoCao_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.html`;
+            
+            // Hiển thị kết quả cho học sinh (CHỈ XEM, KHÔNG TẢI)
+            let resultHtml = `
+                <div class="result-summary">
+                    <div>📝 KẾT QUẢ BÀI KIỂM TRA</div>
+                    <div class="result-score">${scoreValue}/10</div>
+                    <div class="result-stats">
+                        <div class="result-stat">✅ Đúng: ${correctCount} câu</div>
+                        <div class="result-stat">❌ Sai: ${total - correctCount} câu</div>
+                        <div class="result-stat">📊 Tỉ lệ: ${percentage}%</div>
+                        <div class="result-stat">⚠️ Vi phạm: ${violationCount}/3</div>
+                    </div>
+                    <div style="margin-top: 20px; font-size: 14px; opacity: 0.8;">
+                        📧 Kết quả chi tiết đã được gửi đến giáo viên.
+                    </div>
+                </div>
+            `;
+            
+            Swal.fire({
+                title: "🎉 Nộp bài thành công!",
+                html: resultHtml,
+                icon: "success",
+                showConfirmButton: true,
+                confirmButtonText: "Đóng",
+                width: "550px"
+            });
+            
+            // Gửi email cho giáo viên (có kèm link tải file)
             try {
-                // Upload file lên tmpfiles.org
-                loadingDiv.innerHTML = '<div class="spinner"></div><div>Đang tạo báo cáo...</div>';
                 const downloadLink = await uploadToTempStorage(reportHTML, filename);
-                
-                // Gửi email cho giáo viên
-                loadingDiv.innerHTML = '<div class="spinner"></div><div>Đang gửi kết quả...</div>';
                 
                 await emailjs.send("service_ev19d5j", "template_6jz1wdc", {
                     student_name: studentName,
                     quiz_title: activeQuiz.title,
-                    score: `${scoreValue}/10 (${correctCount}/${total} câu đúng)`,
+                    score: `${scoreValue}/10 (${correctCount}/${total} câu đúng - ${percentage}%)`,
                     violation_count: violationCount,
                     correct_answers: `${correctCount}/${total}`,
                     submit_time: submitTime,
                     download_link: downloadLink,
                     filename: filename
                 });
-                
-                // Hiển thị link tải trực tiếp cho học sinh (KHÔNG hỏi email)
-                Swal.fire({
-                    title: "✅ Hoàn thành!",
-                    html: `<div style="text-align: center;">
-                        <div style="font-size: 36px; font-weight: bold; color: #8D7B68; margin: 10px 0;">${scoreValue}/10</div>
-                        <div style="margin: 10px 0;">⭐ ${correctCount}/${total} câu đúng</div>
-                        <hr style="margin: 15px 0;">
-                        <a href="${downloadLink}" target="_blank" style="display: inline-block; background: #8D7B68; color: white; padding: 10px 20px; border-radius: 30px; text-decoration: none; margin: 10px 0; font-weight: bold;">
-                            📥 Tải báo cáo chi tiết
-                        </a>
-                        <p style="font-size: 12px; color: #666; margin-top: 15px;">
-                            📧 Kết quả đã được gửi đến giáo viên.
-                        </p>
-                    </div>`,
-                    icon: "success",
-                    showConfirmButton: true,
-                    confirmButtonText: "Đóng",
-                    width: "500px"
-                });
-                
+                console.log("Email đã gửi thành công đến giáo viên");
             } catch (err) {
-                console.error("Lỗi:", err);
-                // Nếu upload thất bại, vẫn hiển thị kết quả và cho phép tải file trực tiếp
-                const blob = new Blob([reportHTML], { type: 'text/html' });
-                const localUrl = URL.createObjectURL(blob);
-                
-                Swal.fire({
-                    title: "🎉 Nộp bài thành công!",
-                    html: `<div style="text-align: center;">
-                        <div style="font-size: 36px; font-weight: bold; color: #8D7B68; margin: 10px 0;">${scoreValue}/10</div>
-                        <div style="margin: 10px 0;">⭐ ${correctCount}/${total} câu đúng</div>
-                        <hr style="margin: 15px 0;">
-                        <a href="${localUrl}" download="${filename}" style="display: inline-block; background: #8D7B68; color: white; padding: 10px 20px; border-radius: 30px; text-decoration: none; margin: 10px 0; font-weight: bold;">
-                            📥 Tải báo cáo chi tiết
-                        </a>
-                        <p style="font-size: 12px; color: #666; margin-top: 15px;">
-                            ⚠️ Không thể gửi email. Hãy tải file này về máy.
-                        </p>
-                    </div>`,
-                    icon: "success"
-                });
+                console.error("Lỗi gửi email:", err);
+                // Không hiển thị lỗi cho học sinh
             }
-            
-            // Xóa loading
-            document.body.removeChild(loadingDiv);
         }
 
         function renderGradeButtons() {
@@ -952,15 +992,33 @@
                             const parsed = JSON.parse(ev.target.result);
                             if(Array.isArray(parsed)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed, null, 2);
-                                Swal.fire({ title: "✅ Thành công!", html: `Đã tải ${file.name}<br>${parsed.length} câu hỏi`, icon: "success", timer: 2000, showConfirmButton: false });
-                            } else if(parsed.questions && Array.isArray(parsed.questions)) {
+                                Swal.fire({
+                                    title: "✅ Thành công!",
+                                    html: `Đã tải file <strong>${file.name}</strong><br>Số câu hỏi: ${parsed.length}`,
+                                    icon: "success",
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            } 
+                            else if(parsed.questions && Array.isArray(parsed.questions)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed.questions, null, 2);
-                                Swal.fire({ title: "✅ Thành công!", html: `Đã tải ${file.name}<br>${parsed.questions.length} câu hỏi`, icon: "success", timer: 2000, showConfirmButton: false });
-                            } else {
-                                throw new Error("Cấu trúc JSON không hợp lệ");
+                                Swal.fire({
+                                    title: "✅ Thành công!",
+                                    html: `Đã tải file <strong>${file.name}</strong><br>Số câu hỏi: ${parsed.questions.length}`,
+                                    icon: "success",
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                            else {
+                                throw new Error("Cấu trúc JSON không hợp lệ. Cần là mảng các câu hỏi hoặc object có trường 'questions'.");
                             }
                         } catch(err) {
-                            Swal.fire({ title: "❌ Lỗi!", html: `File JSON không hợp lệ:<br><small>${err.message}</small>`, icon: "error" });
+                            Swal.fire({
+                                title: "❌ Lỗi!",
+                                html: `File JSON không hợp lệ:<br><small>${err.message}</small>`,
+                                icon: "error"
+                            });
                         }
                     };
                     reader.readAsText(file);
