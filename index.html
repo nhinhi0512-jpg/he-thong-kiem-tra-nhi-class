@@ -138,14 +138,14 @@
         <!-- Giao diện Học sinh -->
         <div id="student-app" class="space-y-6">
             <div class="card p-6 rounded-xl shadow-sm">
-                <h2 class="text-xl font-bold mb-4">📚 Chọn Khối Lớp Hoặc TOEIC</h2>
+                <h2 class="text-xl font-bold mb-4">📚 Chọn Khối Lớp Của Bạn</h2>
                 <div class="flex flex-wrap gap-3" id="grade-selector"></div>
             </div>
 
             <div id="quiz-list-section" class="hidden">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">📝 Bài kiểm tra <span id="selected-grade-title" class="bg-amber-100 px-2 py-0.5 rounded text-amber-800"></span></h3>
-                    <button onclick="window.backToHome()" class="text-sm text-stone-500 underline">← Chọn danh mục khác</button>
+                    <h3 class="text-lg font-bold">📝 Bài kiểm tra Khối <span id="selected-grade-title" class="bg-amber-100 px-2 py-0.5 rounded text-amber-800"></span></h3>
+                    <button onclick="window.backToHome()" class="text-sm text-stone-500 underline">← Chọn khối khác</button>
                 </div>
                 <div id="quiz-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
             </div>
@@ -204,13 +204,6 @@
                             <input type="text" id="quiz-title" class="w-full" placeholder="VD: Kiểm tra giữa kỳ 1">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold mb-1">📚 Danh mục</label>
-                            <select id="quiz-category" class="w-full">
-                                <option value="grade">Khối lớp</option>
-                                <option value="toeic">TOEIC</option>
-                            </select>
-                        </div>
-                        <div id="grade-select-container">
                             <label class="block text-sm font-semibold mb-1">📚 Khối lớp</label>
                             <select id="quiz-grade" class="w-full">
                                 <option value="6">Khối 6</option>
@@ -296,7 +289,7 @@
                             <thead>
                                 <tr class="border-b bg-stone-100">
                                     <th class="p-3">Tên đề</th>
-                                    <th class="p-3">Danh mục</th>
+                                    <th class="p-3">Khối</th>
                                     <th class="p-3">Số câu</th>
                                     <th class="p-3">Trạng thái</th>
                                     <th class="p-3 text-right">Hành động</th>
@@ -329,7 +322,7 @@
         const provider = new GoogleAuthProvider();
         emailjs.init("mLtczK88boJ9pQldW");
 
-        let allQuizzes = [], activeQuiz = null, selectedCategory = null, selectedValue = null, isQuizSubmitted = false, studentName = "", violationCount = 0, isQuizActive = false;
+        let allQuizzes = [], activeQuiz = null, selectedGrade = null, isQuizSubmitted = false, studentName = "", violationCount = 0, isQuizActive = false;
         let currentMode = new URLSearchParams(window.location.search).get('mode') === 'admin' ? "admin" : "student";
 
         const studentApp = document.getElementById('student-app');
@@ -350,13 +343,6 @@
         } else {
             studentApp.classList.remove('hidden');
             adminApp.classList.add('hidden');
-        }
-
-        // Hàm xác định category cho bài cũ (tương thích ngược)
-        function getQuizCategory(quiz) {
-            if (quiz.category) return quiz.category;
-            // Bài cũ không có category => mặc định là grade
-            return 'grade';
         }
 
         // ========== HÀM TỰ ĐỘNG XUỐNG DÒNG ==========
@@ -599,24 +585,6 @@
 
         function renderGradeButtons() {
             gradeSelector.innerHTML = '';
-            
-            // Thêm nút TOEIC
-            const toeicBtn = document.createElement('button');
-            toeicBtn.innerText = '🎯 TOEIC';
-            toeicBtn.className = `px-5 py-2.5 rounded-xl font-medium grade-btn shadow-sm`;
-            toeicBtn.onclick = () => {
-                document.querySelectorAll('#grade-selector button').forEach(b => b.classList.remove('active', 'border-2', 'border-amber-700'));
-                toeicBtn.classList.add('active', 'border-2', 'border-amber-700');
-                selectedCategory = 'toeic';
-                selectedValue = null;
-                selectedGradeTitle.innerHTML = 'TOEIC 🎯';
-                quizListSection.classList.remove('hidden');
-                quizAttemptSection.classList.add('hidden');
-                renderStudentQuizzes();
-            };
-            gradeSelector.appendChild(toeicBtn);
-            
-            // Các nút khối lớp từ 6 đến 12
             for (let g = 6; g <= 12; g++) {
                 const btn = document.createElement('button');
                 btn.innerText = `Khối ${g}`;
@@ -624,46 +592,23 @@
                 btn.onclick = () => {
                     document.querySelectorAll('#grade-selector button').forEach(b => b.classList.remove('active', 'border-2', 'border-amber-700'));
                     btn.classList.add('active', 'border-2', 'border-amber-700');
-                    selectedCategory = 'grade';
-                    selectedValue = g;
-                    selectedGradeTitle.innerText = `Khối ${g}`;
+                    selectedGrade = g;
+                    selectedGradeTitle.innerText = g;
                     quizListSection.classList.remove('hidden');
                     quizAttemptSection.classList.add('hidden');
                     renderStudentQuizzes();
                 };
                 gradeSelector.appendChild(btn);
             }
-            // Mặc định chọn Khối 6
-            if (gradeSelector.children[1]) gradeSelector.children[1].click();
+            if (gradeSelector.firstChild) gradeSelector.firstChild.click();
         }
 
         function renderStudentQuizzes() {
-            if (!selectedCategory) return;
+            if (!selectedGrade) return;
             quizGrid.innerHTML = '';
-            
-            let filtered = [];
-            if (selectedCategory === 'grade') {
-                // Lọc bài kiểm tra theo khối:
-                // - Bài mới có category='grade' và grade khớp
-                // - Bài cũ (không có category) có grade khớp
-                filtered = allQuizzes.filter(q => {
-                    const category = getQuizCategory(q);
-                    const hasGrade = q.grade !== undefined;
-                    const gradeMatch = q.grade == selectedValue;
-                    const isOpen = q.status === 'open';
-                    // Chấp nhận bài cũ (không có category nhưng có grade) và bài mới (category='grade')
-                    return (category === 'grade' || !q.category) && gradeMatch && isOpen;
-                });
-            } else if (selectedCategory === 'toeic') {
-                filtered = allQuizzes.filter(q => {
-                    const category = getQuizCategory(q);
-                    const isOpen = q.status === 'open';
-                    return category === 'toeic' && isOpen;
-                });
-            }
-            
+            const filtered = allQuizzes.filter(q => q.grade == selectedGrade && q.status === 'open');
             if (filtered.length === 0) {
-                quizGrid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-500">📭 Chưa có bài kiểm tra nào cho ${selectedCategory === 'toeic' ? 'TOEIC' : 'khối ' + selectedValue}</div>`;
+                quizGrid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-500">📭 Chưa có bài kiểm tra nào cho khối ${selectedGrade}</div>`;
                 return;
             }
             filtered.forEach(quiz => {
@@ -685,10 +630,9 @@
         };
         
         window.backToHome = function() { 
-            selectedCategory = null; 
-            selectedValue = null;
+            selectedGrade = null; 
             quizListSection.classList.add('hidden'); 
-            if(gradeSelector.children[1]) gradeSelector.children[1].click();
+            if(gradeSelector.firstChild) gradeSelector.firstChild.click(); 
         };
         
         window.closeConfirmModal = () => confirmModal.classList.add('hidden');
@@ -697,7 +641,7 @@
         function executeExit() { 
             isQuizActive = false; 
             quizAttemptSection.classList.add('hidden'); 
-            if (selectedCategory) { 
+            if (selectedGrade) { 
                 quizListSection.classList.remove('hidden'); 
                 renderStudentQuizzes(); 
             } 
@@ -750,16 +694,9 @@
             allQuizzes.forEach(quiz => {
                 const row = tbody.insertRow();
                 row.className = "border-b hover:bg-stone-50";
-                const category = getQuizCategory(quiz);
-                let categoryText = '';
-                if (category === 'toeic') {
-                    categoryText = '🎯 TOEIC';
-                } else {
-                    categoryText = quiz.grade ? `Khối ${quiz.grade}` : 'Khối ?';
-                }
                 row.innerHTML = `
                     <td class="p-3 font-semibold">${escapeHtml(quiz.title)}</td>
-                    <td class="p-3">${categoryText}</td>
+                    <td class="p-3">Khối ${quiz.grade}</td>
                     <td class="p-3">${quiz.questions?.length || 0}</td>
                     <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${quiz.status==='open' ? 'bg-green-100 text-green-800' : 'bg-stone-200 text-stone-700'}">${quiz.status==='open' ? '🔓 Mở' : '🔒 Khóa'}</span></td>
                     <td class="p-3 text-right space-x-1">
@@ -775,28 +712,13 @@
             if(quiz){ 
                 document.getElementById('edit-quiz-id').value = quiz.id; 
                 document.getElementById('quiz-title').value = quiz.title; 
-                const category = getQuizCategory(quiz);
-                document.getElementById('quiz-category').value = category;
-                handleCategoryChange();
-                if (category === 'grade' && quiz.grade) {
-                    document.getElementById('quiz-grade').value = quiz.grade; 
-                }
-                document.getElementById('quiz-status').value = quiz.status || 'open'; 
+                document.getElementById('quiz-grade').value = quiz.grade; 
+                document.getElementById('quiz-status').value = quiz.status; 
                 document.getElementById('quiz-questions-json').value = JSON.stringify(quiz.questions, null, 2); 
                 document.getElementById('form-title').innerHTML = "✏️ Sửa bài kiểm tra"; 
                 document.getElementById('btn-cancel-edit').classList.remove('hidden'); 
             } 
         };
-        
-        function handleCategoryChange() {
-            const category = document.getElementById('quiz-category').value;
-            const gradeContainer = document.getElementById('grade-select-container');
-            if (category === 'grade') {
-                gradeContainer.classList.remove('hidden');
-            } else {
-                gradeContainer.classList.add('hidden');
-            }
-        }
         
         window.deleteQuiz = async (id) => { 
             if(confirm("Xóa vĩnh viễn bài kiểm tra này?")) {
@@ -808,7 +730,7 @@
         window.saveQuiz = async () => {
             const id = document.getElementById('edit-quiz-id').value;
             const title = document.getElementById('quiz-title').value.trim();
-            const category = document.getElementById('quiz-category').value;
+            const grade = parseInt(document.getElementById('quiz-grade').value);
             const status = document.getElementById('quiz-status').value;
             const jsonText = document.getElementById('quiz-questions-json').value.trim();
             
@@ -823,12 +745,7 @@
                 return alert("JSON không hợp lệ! Vui lòng kiểm tra lại cấu trúc."); 
             }
             
-            const data = { title, category, status, questions, updatedAt: new Date().toISOString() };
-            
-            if (category === 'grade') {
-                const grade = parseInt(document.getElementById('quiz-grade').value);
-                data.grade = grade;
-            }
+            const data = { title, grade, status, questions, updatedAt: new Date().toISOString() };
             
             try {
                 if(id) {
@@ -849,8 +766,6 @@
             document.getElementById('quiz-title').value = ""; 
             document.getElementById('quiz-questions-json').value = ""; 
             document.getElementById('quiz-json-file').value = ""; 
-            document.getElementById('quiz-category').value = "grade";
-            handleCategoryChange();
             document.getElementById('form-title').innerHTML = "➕ Tạo bài kiểm tra mới"; 
             document.getElementById('btn-cancel-edit').classList.add('hidden'); 
         };
@@ -942,13 +857,11 @@
 
         document.getElementById('submit-quiz-btn')?.addEventListener('click', submitQuizHandler);
         document.getElementById('preview-json-btn')?.addEventListener('click', window.previewJson);
-        document.getElementById('quiz-category')?.addEventListener('change', handleCategoryChange);
         
         renderGradeButtons();
         listenToQuizzes();
         setupFileLoader();
         if (currentMode === "admin") checkAdminAuth();
-        handleCategoryChange();
     </script>
 </body>
 </html>
