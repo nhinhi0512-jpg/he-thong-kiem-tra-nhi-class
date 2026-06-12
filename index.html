@@ -69,38 +69,6 @@
             margin: 6px 0;
             content: "";
         }
-        .cloze-input, .reorder-input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin-top: 0.5rem;
-            transition: all 0.2s;
-        }
-        .cloze-input:focus, .reorder-input:focus {
-            outline: none;
-            border-color: var(--primary-brown);
-            ring: 2px solid var(--accent-beige);
-        }
-        select, input[type="text"], textarea {
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db;
-            padding: 0.5rem 0.75rem;
-            outline: none;
-        }
-        select:focus, input:focus, textarea:focus {
-            border-color: var(--primary-brown);
-            ring: 2px solid var(--accent-beige);
-        }
-        .highlight-word {
-            background-color: #fef08a;
-            padding: 2px 6px;
-            border-radius: 6px;
-            font-weight: bold;
-            color: #854d0e;
-            text-decoration: underline;
-            text-decoration-thickness: 2px;
-        }
         .passage-box {
             background-color: #fefce8;
             border-left: 6px solid #eab308;
@@ -123,6 +91,15 @@
             white-space: pre-wrap;
             word-break: break-word;
         }
+        .highlight-word {
+            background-color: #fef08a;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #854d0e;
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+        }
     </style>
 </head>
 <body class="antialiased min-h-screen pb-12">
@@ -138,14 +115,14 @@
         <!-- Giao diện Học sinh -->
         <div id="student-app" class="space-y-6">
             <div class="card p-6 rounded-xl shadow-sm">
-                <h2 class="text-xl font-bold mb-4">📚 Chọn Khối Lớp Của Bạn</h2>
+                <h2 class="text-xl font-bold mb-4">📚 Chọn Khối Lớp Hoặc TOEIC</h2>
                 <div class="flex flex-wrap gap-3" id="grade-selector"></div>
             </div>
 
             <div id="quiz-list-section" class="hidden">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">📝 Bài kiểm tra Khối <span id="selected-grade-title" class="bg-amber-100 px-2 py-0.5 rounded text-amber-800"></span></h3>
-                    <button onclick="window.backToHome()" class="text-sm text-stone-500 underline">← Chọn khối khác</button>
+                    <h3 class="text-lg font-bold">📝 Bài kiểm tra <span id="selected-grade-title" class="bg-amber-100 px-2 py-0.5 rounded text-amber-800"></span></h3>
+                    <button onclick="window.backToHome()" class="text-sm text-stone-500 underline">← Chọn danh mục khác</button>
                 </div>
                 <div id="quiz-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
             </div>
@@ -204,6 +181,13 @@
                             <input type="text" id="quiz-title" class="w-full" placeholder="VD: Kiểm tra giữa kỳ 1">
                         </div>
                         <div>
+                            <label class="block text-sm font-semibold mb-1">📚 Danh mục</label>
+                            <select id="quiz-category" class="w-full">
+                                <option value="grade">Khối lớp</option>
+                                <option value="toeic">TOEIC</option>
+                            </select>
+                        </div>
+                        <div id="grade-select-container">
                             <label class="block text-sm font-semibold mb-1">📚 Khối lớp</label>
                             <select id="quiz-grade" class="w-full">
                                 <option value="6">Khối 6</option>
@@ -224,14 +208,14 @@
                         </div>
                     </div>
 
-                    <!-- KHU VỰC UPLOAD JSON MỚI - HỖ TRỢ BẤT KỲ FILE JSON NÀO -->
+                    <!-- KHU VỰC UPLOAD JSON -->
                     <div class="p-5 border-2 border-dashed border-amber-800/40 rounded-lg bg-amber-50/50">
-                        <label class="block text-sm font-bold text-amber-900 mb-2">📂 Tải lên file JSON (hỗ trợ mọi cấu trúc đúng định dạng)</label>
+                        <label class="block text-sm font-bold text-amber-900 mb-2">📂 Tải lên file JSON (chỉ hỗ trợ dạng multiple choice)</label>
                         <div class="flex gap-3 flex-wrap">
                             <input type="file" id="quiz-json-file" accept=".json" class="block text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-amber-100 file:text-amber-800 file:cursor-pointer hover:file:bg-amber-200">
                             <button type="button" id="preview-json-btn" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700">👁️ Xem trước nội dung</button>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2">✓ Hỗ trợ cấu trúc JSON bất kỳ (multiple_choice, cloze, reorder, reading) <br> ✓ Tự động phát hiện và hiển thị đúng định dạng</p>
+                        <p class="text-xs text-gray-500 mt-2">✓ Hỗ trợ cấu trúc JSON dạng multiple choice (trắc nghiệm)</p>
                     </div>
 
                     <!-- Modal xem trước JSON -->
@@ -258,20 +242,6 @@
     "correct": 0,
     "highlight": "từ_cần_gạch_chân",
     "explain": "Giải thích đáp án đúng"
-  },
-  {
-    "type": "cloze",
-    "passage": "Đoạn văn có chỗ trống (26) ______",
-    "question": "Câu hỏi điền từ",
-    "correct": "đáp án đúng",
-    "explain": "Giải thích tại sao"
-  },
-  {
-    "type": "reorder",
-    "question": "Sắp xếp các từ sau thành câu:",
-    "words": ["từ1", "từ2", "từ3"],
-    "correct": ["từ1", "từ2", "từ3"],
-    "explain": "Giải thích cấu trúc câu"
   }
 ]'></textarea>
                     </div>
@@ -289,7 +259,7 @@
                             <thead>
                                 <tr class="border-b bg-stone-100">
                                     <th class="p-3">Tên đề</th>
-                                    <th class="p-3">Khối</th>
+                                    <th class="p-3">Danh mục</th>
                                     <th class="p-3">Số câu</th>
                                     <th class="p-3">Trạng thái</th>
                                     <th class="p-3 text-right">Hành động</th>
@@ -322,7 +292,7 @@
         const provider = new GoogleAuthProvider();
         emailjs.init("mLtczK88boJ9pQldW");
 
-        let allQuizzes = [], activeQuiz = null, selectedGrade = null, isQuizSubmitted = false, studentName = "", violationCount = 0, isQuizActive = false;
+        let allQuizzes = [], activeQuiz = null, selectedCategory = null, selectedValue = null, isQuizSubmitted = false, studentName = "", violationCount = 0, isQuizActive = false;
         let currentMode = new URLSearchParams(window.location.search).get('mode') === 'admin' ? "admin" : "student";
 
         const studentApp = document.getElementById('student-app');
@@ -345,46 +315,24 @@
             adminApp.classList.add('hidden');
         }
 
-        // ========== HÀM TỰ ĐỘNG XUỐNG DÒNG ==========
+        // Hàm tự động xuống dòng
         function autoFormatLineBreaks(text) {
             if (!text) return '';
-            
             let result = text;
-            
-            // Chuyển đổi \n thành <br>
             result = result.replace(/\n/g, '<br>');
-            
-            // Xử lý a., b., c., d. (thường)
             result = result.replace(/([a-d]\.)\s+/gi, '<br>$1 ');
-            
-            // Xử lý A., B., C., D. (hoa)
             result = result.replace(/([A-D]\.)\s+/g, '<br>$1 ');
-            
-            // Xử lý số 1., 2., 3., 4.,...
             result = result.replace(/(\d+\.)\s+/g, '<br>$1 ');
-            
-            // Xử lý e., f., g. (mở rộng)
-            result = result.replace(/([e-g]\.)\s+/gi, '<br>$1 ');
-            
-            // Xử lý E., F., G.
-            result = result.replace(/([E-G]\.)\s+/g, '<br>$1 ');
-            
-            // Loại bỏ <br> ở đầu chuỗi nếu có
             result = result.replace(/^<br>/, '');
-            
-            // Xử lý trường hợp <br><br> thành <br> (tránh xuống dòng quá nhiều)
             result = result.replace(/(<br>){3,}/g, '<br><br>');
-            
             return result;
         }
 
-        // Hàm escape HTML kết hợp với auto format
         function escapeAndFormat(str) {
             if (!str) return '';
             return autoFormatLineBreaks(escapeHtml(str));
         }
 
-        // Hàm xử lý highlight từ trong câu hỏi (có hỗ trợ format)
         function renderQuestionText(question, highlightWord) {
             if (!highlightWord) return escapeAndFormat(question);
             const regex = new RegExp(`(${highlightWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
@@ -392,41 +340,29 @@
             return formattedQuestion.replace(regex, `<span class="highlight-word">$1</span>`);
         }
 
-        // Hàm render câu hỏi hỗ trợ passage và highlight
-        let lastPassageForCloze = null;
         let lastPassageForReading = null;
 
         function renderQuestion(q, idx) {
             const block = document.createElement('div');
             block.className = "p-4 rounded-xl bg-stone-50 border border-stone-200 mb-4";
             
-            // Xử lý passage cho cloze (chỉ hiển thị khi passage khác với câu trước)
-            if (q.type === 'cloze' && q.passage && lastPassageForCloze !== q.passage) {
-                const passageDiv = document.createElement('div');
-                passageDiv.className = 'passage-box';
-                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN (dùng cho câu 26-30):</div> ${escapeAndFormat(q.passage)}`;
-                block.appendChild(passageDiv);
-                lastPassageForCloze = q.passage;
-            }
-            
-            // Xử lý passage cho reading (chỉ hiển thị khi passage khác với câu trước)
             if (q.type === 'reading' && q.passage && lastPassageForReading !== q.passage) {
                 const passageDiv = document.createElement('div');
                 passageDiv.className = 'passage-box';
-                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN (dùng cho câu 31-35):</div> ${escapeAndFormat(q.passage)}`;
+                passageDiv.innerHTML = `<div style="font-weight:bold; margin-bottom:8px;">📄 ĐOẠN VĂN:</div> ${escapeAndFormat(q.passage)}`;
                 block.appendChild(passageDiv);
                 lastPassageForReading = q.passage;
             }
             
             let questionHtml = `<div class="text-stone-800 mb-3 question-text">📌 Câu ${idx+1}: `;
-            if (q.type === 'multiple_choice' && q.highlight) {
+            if (q.highlight) {
                 questionHtml += renderQuestionText(q.question, q.highlight);
             } else {
                 questionHtml += escapeAndFormat(q.question);
             }
             questionHtml += `</div>`;
             
-            if ((q.type === 'multiple_choice' || q.type === 'reading') && q.options && Array.isArray(q.options)) {
+            if (q.options && Array.isArray(q.options)) {
                 questionHtml += `<div class="space-y-2 ml-2">`;
                 q.options.forEach((opt, optIdx) => {
                     const letter = String.fromCharCode(65 + optIdx);
@@ -436,31 +372,6 @@
                                      </label>`;
                 });
                 questionHtml += `</div>`;
-            } 
-            else if (q.type === 'cloze') {
-                if (q.options && Array.isArray(q.options)) {
-                    // Hiển thị dạng trắc nghiệm cho cloze
-                    questionHtml += `<div class="space-y-2 ml-2">`;
-                    q.options.forEach((opt, optIdx) => {
-                        const letter = String.fromCharCode(65 + optIdx);
-                        questionHtml += `<label class="flex items-center gap-3 p-2 rounded-lg border bg-white option-label">
-                                            <input type="radio" name="q${idx}" value="${optIdx}">
-                                            <span class="text-stone-700">${letter}. ${escapeHtml(opt)}</span>
-                                         </label>`;
-                    });
-                    questionHtml += `</div>`;
-                } else {
-                    questionHtml += `<input type="text" id="input-${idx}" class="cloze-input" placeholder="Nhập đáp án của bạn...">`;
-                }
-            } 
-            else if (q.type === 'reorder') {
-                if (q.words && Array.isArray(q.words)) {
-                    questionHtml += `<div class="text-sm text-gray-600 mb-2">🔤 Các từ cần sắp xếp: <span class="font-mono bg-gray-100 px-2 py-1 rounded">${escapeHtml(q.words.join(' · '))}</span></div>`;
-                }
-                questionHtml += `<input type="text" id="input-${idx}" class="reorder-input" placeholder="Nhập câu hoàn chỉnh...">`;
-            }
-            else {
-                questionHtml += `<input type="text" id="input-${idx}" class="cloze-input" placeholder="Nhập đáp án...">`;
             }
             
             questionHtml += `<div id="explain-${idx}" class="hidden p-3 rounded-md text-sm mt-3"></div>`;
@@ -483,8 +394,6 @@
             const container = document.getElementById('questions-container');
             container.innerHTML = "";
             
-            // Reset lại biến nhớ passage
-            lastPassageForCloze = null;
             lastPassageForReading = null;
             
             (quiz.questions || []).forEach((q, idx) => {
@@ -507,51 +416,13 @@
                 let isCorrect = false;
                 let correctAnswerText = "";
                 
-                if (q.type === 'multiple_choice' || q.type === 'reading') {
-                    const selectedRadio = document.querySelector(`input[name="q${i}"]:checked`);
-                    if (selectedRadio && q.options) {
-                        const selectedVal = parseInt(selectedRadio.value);
-                        isCorrect = (selectedVal === q.correct);
-                        correctAnswerText = q.options[q.correct] || "Không xác định";
-                    } else {
-                        correctAnswerText = q.options?.[q.correct] || "Chưa có đáp án";
-                    }
-                } 
-                else if (q.type === 'cloze') {
-                    const selectedRadio = document.querySelector(`input[name="q${i}"]:checked`);
-                    if (selectedRadio && q.options) {
-                        const selectedVal = parseInt(selectedRadio.value);
-                        isCorrect = (selectedVal === q.correct);
-                        correctAnswerText = q.options[q.correct] || "Không xác định";
-                    } else {
-                        const inputEl = document.getElementById(`input-${i}`);
-                        if (inputEl) {
-                            const userAnswer = inputEl.value.trim().toLowerCase();
-                            const correctVal = (q.correct || "").toString().toLowerCase();
-                            isCorrect = (userAnswer === correctVal);
-                            correctAnswerText = q.correct;
-                        } else {
-                            correctAnswerText = q.correct;
-                        }
-                    }
-                } 
-                else if (q.type === 'reorder') {
-                    const inputEl = document.getElementById(`input-${i}`);
-                    if (inputEl) {
-                        const userAnswer = inputEl.value.trim().toLowerCase();
-                        const correctSentence = (Array.isArray(q.correct) ? q.correct.join(' ') : q.correct).toLowerCase();
-                        isCorrect = (userAnswer === correctSentence);
-                        correctAnswerText = Array.isArray(q.correct) ? q.correct.join(' ') : q.correct;
-                    }
-                }
-                else {
-                    const inputEl = document.getElementById(`input-${i}`);
-                    if (inputEl) {
-                        const userAnswer = inputEl.value.trim().toLowerCase();
-                        const correctAns = q.correct ? q.correct.toString().toLowerCase() : "";
-                        isCorrect = (userAnswer === correctAns);
-                        correctAnswerText = q.correct;
-                    }
+                const selectedRadio = document.querySelector(`input[name="q${i}"]:checked`);
+                if (selectedRadio && q.options) {
+                    const selectedVal = parseInt(selectedRadio.value);
+                    isCorrect = (selectedVal === q.correct);
+                    correctAnswerText = q.options[q.correct] || "Không xác định";
+                } else {
+                    correctAnswerText = q.options?.[q.correct] || "Chưa có đáp án";
                 }
                 
                 if (isCorrect) correctCount++;
@@ -583,8 +454,26 @@
             }
         }
 
-        function renderGradeButtons() {
+        function renderCategoryButtons() {
             gradeSelector.innerHTML = '';
+            
+            // Nút TOEIC
+            const toeicBtn = document.createElement('button');
+            toeicBtn.innerText = '🎯 TOEIC';
+            toeicBtn.className = `px-5 py-2.5 rounded-xl font-medium grade-btn shadow-sm`;
+            toeicBtn.onclick = () => {
+                document.querySelectorAll('#grade-selector button').forEach(b => b.classList.remove('active', 'border-2', 'border-amber-700'));
+                toeicBtn.classList.add('active', 'border-2', 'border-amber-700');
+                selectedCategory = 'toeic';
+                selectedValue = null;
+                selectedGradeTitle.innerHTML = 'TOEIC 🎯';
+                quizListSection.classList.remove('hidden');
+                quizAttemptSection.classList.add('hidden');
+                renderStudentQuizzes();
+            };
+            gradeSelector.appendChild(toeicBtn);
+            
+            // Các nút khối lớp
             for (let g = 6; g <= 12; g++) {
                 const btn = document.createElement('button');
                 btn.innerText = `Khối ${g}`;
@@ -592,8 +481,9 @@
                 btn.onclick = () => {
                     document.querySelectorAll('#grade-selector button').forEach(b => b.classList.remove('active', 'border-2', 'border-amber-700'));
                     btn.classList.add('active', 'border-2', 'border-amber-700');
-                    selectedGrade = g;
-                    selectedGradeTitle.innerText = g;
+                    selectedCategory = 'grade';
+                    selectedValue = g;
+                    selectedGradeTitle.innerText = `Khối ${g}`;
                     quizListSection.classList.remove('hidden');
                     quizAttemptSection.classList.add('hidden');
                     renderStudentQuizzes();
@@ -604,17 +494,24 @@
         }
 
         function renderStudentQuizzes() {
-            if (!selectedGrade) return;
+            if (!selectedCategory) return;
             quizGrid.innerHTML = '';
-            const filtered = allQuizzes.filter(q => q.grade == selectedGrade && q.status === 'open');
+            
+            let filtered = [];
+            if (selectedCategory === 'grade') {
+                filtered = allQuizzes.filter(q => q.category === 'grade' && q.grade == selectedValue && q.status === 'open');
+            } else if (selectedCategory === 'toeic') {
+                filtered = allQuizzes.filter(q => q.category === 'toeic' && q.status === 'open');
+            }
+            
             if (filtered.length === 0) {
-                quizGrid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-500">📭 Chưa có bài kiểm tra nào cho khối ${selectedGrade}</div>`;
+                quizGrid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-500">📭 Chưa có bài kiểm tra nào cho ${selectedCategory === 'toeic' ? 'TOEIC' : 'khối ' + selectedValue}</div>`;
                 return;
             }
             filtered.forEach(quiz => {
                 const card = document.createElement('div');
                 card.className = "card p-5 flex justify-between items-center hover:shadow-md transition";
-                card.innerHTML = `<div><h4 class="font-bold text-lg">${escapeHtml(quiz.title)}</h4><p class="text-xs text-gray-500">${quiz.questions?.length || 0} câu hỏi</p></div>
+                card.innerHTML = `<div><h4 class="font-bold text-lg">${escapeHtml(quiz.title)}</h4><p class="text-xs text-gray-500">${quiz.questions?.length || 0} câu hỏi trắc nghiệm</p></div>
                                   <button class="btn-primary px-5 py-2 rounded-lg">✍️ Làm bài</button>`;
                 card.querySelector('button').onclick = () => startQuiz(quiz);
                 quizGrid.appendChild(card);
@@ -623,14 +520,14 @@
 
         window.backToQuizList = function() {
             if (isQuizSubmitted) return executeExit();
-            const hasAnyAnswer = document.querySelectorAll('#questions-container input[type="radio"]:checked, #questions-container input[type="text"]').length > 0;
-            const hasTextAnswer = Array.from(document.querySelectorAll('#questions-container input[type="text"]')).some(input => input.value.trim() !== "");
-            if (hasAnyAnswer || hasTextAnswer) confirmModal.classList.remove('hidden');
+            const hasAnyAnswer = document.querySelectorAll('#questions-container input[type="radio"]:checked').length > 0;
+            if (hasAnyAnswer) confirmModal.classList.remove('hidden');
             else executeExit();
         };
         
         window.backToHome = function() { 
-            selectedGrade = null; 
+            selectedCategory = null; 
+            selectedValue = null;
             quizListSection.classList.add('hidden'); 
             if(gradeSelector.firstChild) gradeSelector.firstChild.click(); 
         };
@@ -641,7 +538,7 @@
         function executeExit() { 
             isQuizActive = false; 
             quizAttemptSection.classList.add('hidden'); 
-            if (selectedGrade) { 
+            if (selectedCategory) { 
                 quizListSection.classList.remove('hidden'); 
                 renderStudentQuizzes(); 
             } 
@@ -694,9 +591,10 @@
             allQuizzes.forEach(quiz => {
                 const row = tbody.insertRow();
                 row.className = "border-b hover:bg-stone-50";
+                const categoryText = quiz.category === 'toeic' ? '🎯 TOEIC' : `📚 Khối ${quiz.grade}`;
                 row.innerHTML = `
                     <td class="p-3 font-semibold">${escapeHtml(quiz.title)}</td>
-                    <td class="p-3">Khối ${quiz.grade}</td>
+                    <td class="p-3">${categoryText}</td>
                     <td class="p-3">${quiz.questions?.length || 0}</td>
                     <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${quiz.status==='open' ? 'bg-green-100 text-green-800' : 'bg-stone-200 text-stone-700'}">${quiz.status==='open' ? '🔓 Mở' : '🔒 Khóa'}</span></td>
                     <td class="p-3 text-right space-x-1">
@@ -712,13 +610,28 @@
             if(quiz){ 
                 document.getElementById('edit-quiz-id').value = quiz.id; 
                 document.getElementById('quiz-title').value = quiz.title; 
-                document.getElementById('quiz-grade').value = quiz.grade; 
+                document.getElementById('quiz-category').value = quiz.category || 'grade';
+                handleCategoryChange();
+                if (quiz.category === 'grade') {
+                    document.getElementById('quiz-grade').value = quiz.grade; 
+                }
                 document.getElementById('quiz-status').value = quiz.status; 
                 document.getElementById('quiz-questions-json').value = JSON.stringify(quiz.questions, null, 2); 
                 document.getElementById('form-title').innerHTML = "✏️ Sửa bài kiểm tra"; 
                 document.getElementById('btn-cancel-edit').classList.remove('hidden'); 
             } 
         };
+        
+        function handleCategoryChange() {
+            const category = document.getElementById('quiz-category').value;
+            const gradeContainer = document.getElementById('grade-select-container');
+            
+            if (category === 'grade') {
+                gradeContainer.classList.remove('hidden');
+            } else {
+                gradeContainer.classList.add('hidden');
+            }
+        }
         
         window.deleteQuiz = async (id) => { 
             if(confirm("Xóa vĩnh viễn bài kiểm tra này?")) {
@@ -730,7 +643,7 @@
         window.saveQuiz = async () => {
             const id = document.getElementById('edit-quiz-id').value;
             const title = document.getElementById('quiz-title').value.trim();
-            const grade = parseInt(document.getElementById('quiz-grade').value);
+            const category = document.getElementById('quiz-category').value;
             const status = document.getElementById('quiz-status').value;
             const jsonText = document.getElementById('quiz-questions-json').value.trim();
             
@@ -741,11 +654,28 @@
             try { 
                 questions = JSON.parse(jsonText); 
                 if(!Array.isArray(questions)) throw new Error(); 
+                // Kiểm tra mỗi câu hỏi có đúng định dạng multiple choice không
+                for(let q of questions) {
+                    if(q.type !== 'multiple_choice' && q.type !== 'reading') {
+                        throw new Error('Chỉ hỗ trợ dạng multiple_choice và reading');
+                    }
+                    if(!q.options || !Array.isArray(q.options) || q.options.length < 2) {
+                        throw new Error('Mỗi câu hỏi cần có options (mảng các đáp án)');
+                    }
+                    if(q.correct === undefined || q.correct < 0 || q.correct >= q.options.length) {
+                        throw new Error('correct phải là chỉ số đáp án đúng (0-based)');
+                    }
+                }
             } catch(e) { 
-                return alert("JSON không hợp lệ! Vui lòng kiểm tra lại cấu trúc."); 
+                return alert("JSON không hợp lệ! " + e.message); 
             }
             
-            const data = { title, grade, status, questions, updatedAt: new Date().toISOString() };
+            let data = { title, category, status, questions, updatedAt: new Date().toISOString() };
+            
+            if (category === 'grade') {
+                const grade = parseInt(document.getElementById('quiz-grade').value);
+                data.grade = grade;
+            }
             
             try {
                 if(id) {
@@ -766,11 +696,12 @@
             document.getElementById('quiz-title').value = ""; 
             document.getElementById('quiz-questions-json').value = ""; 
             document.getElementById('quiz-json-file').value = ""; 
+            document.getElementById('quiz-category').value = "grade";
+            handleCategoryChange();
             document.getElementById('form-title').innerHTML = "➕ Tạo bài kiểm tra mới"; 
             document.getElementById('btn-cancel-edit').classList.add('hidden'); 
         };
         
-        // Hàm xem trước JSON
         window.previewJson = () => {
             const fileInput = document.getElementById('quiz-json-file');
             if(!fileInput.files || !fileInput.files[0]) {
@@ -796,7 +727,6 @@
             document.getElementById('json-preview-modal').classList.add('hidden');
         };
         
-        // Cập nhật hàm load file - hỗ trợ mọi cấu trúc JSON
         function setupFileLoader() {
             const fileInput = document.getElementById('quiz-json-file');
             if(fileInput) {
@@ -807,7 +737,6 @@
                     reader.onload = (ev) => {
                         try {
                             const parsed = JSON.parse(ev.target.result);
-                            // Kiểm tra nếu là mảng các câu hỏi
                             if(Array.isArray(parsed)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed, null, 2);
                                 Swal.fire({
@@ -817,9 +746,7 @@
                                     timer: 2000,
                                     showConfirmButton: false
                                 });
-                            } 
-                            // Nếu là object có chứa questions array
-                            else if(parsed.questions && Array.isArray(parsed.questions)) {
+                            } else if(parsed.questions && Array.isArray(parsed.questions)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed.questions, null, 2);
                                 Swal.fire({
                                     title: "✅ Thành công!",
@@ -828,8 +755,7 @@
                                     timer: 2000,
                                     showConfirmButton: false
                                 });
-                            }
-                            else {
+                            } else {
                                 throw new Error("Cấu trúc JSON không hợp lệ. Cần là mảng các câu hỏi hoặc object có trường 'questions'.");
                             }
                         } catch(err) {
@@ -857,11 +783,13 @@
 
         document.getElementById('submit-quiz-btn')?.addEventListener('click', submitQuizHandler);
         document.getElementById('preview-json-btn')?.addEventListener('click', window.previewJson);
+        document.getElementById('quiz-category')?.addEventListener('change', handleCategoryChange);
         
-        renderGradeButtons();
+        renderCategoryButtons();
         listenToQuizzes();
         setupFileLoader();
         if (currentMode === "admin") checkAdminAuth();
+        handleCategoryChange();
     </script>
 </body>
 </html>
