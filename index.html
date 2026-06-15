@@ -372,6 +372,10 @@
         let currentFilterCategory = "all";
         let currentStatusFilter = "all";
         let currentSearchTerm = "";
+        
+        // Biến mới để xử lý lỗi vi phạm khi mới bắt đầu
+        let quizStartTime = null;
+        let isProcessingViolation = false;
 
         const studentApp = document.getElementById('student-app');
         const adminApp = document.getElementById('admin-app');
@@ -391,6 +395,13 @@
         } else {
             studentApp.classList.remove('hidden');
             adminApp.classList.add('hidden');
+        }
+
+        // Hàm kiểm tra xem bài làm đã đủ "ổn định" chưa (tránh vi phạm khi mới bắt đầu)
+        function isQuizStable() {
+            if (!quizStartTime) return false;
+            // Chỉ tính vi phạm sau 3 giây kể từ khi bắt đầu bài làm
+            return (Date.now() - quizStartTime) > 3000;
         }
 
         // Hàm xác định category cho bài cũ (tương thích ngược)
@@ -506,6 +517,10 @@
             isQuizSubmitted = false;
             violationCount = 0;
             isQuizActive = true;
+            
+            // Ghi nhận thời gian bắt đầu bài làm để tránh vi phạm ngay lập tức
+            quizStartTime = Date.now();
+            
             document.getElementById('violation-count-display').innerText = "0";
             quizListSection.classList.add('hidden');
             quizAttemptSection.classList.remove('hidden');
@@ -525,8 +540,17 @@
 
         async function submitQuizHandler() {
             if (isQuizSubmitted || !activeQuiz) return;
+            
+            // Set trạng thái ngay để tránh vi phạm khi đang chấm bài
+            isQuizSubmitted = true;
+            isQuizActive = false;
+            
             const questions = activeQuiz.questions;
-            if (!questions?.length) return Swal.fire("Lỗi", "Bài kiểm tra không có câu hỏi", "error");
+            if (!questions?.length) {
+                isQuizSubmitted = false;
+                isQuizActive = true;
+                return Swal.fire("Lỗi", "Bài kiểm tra không có câu hỏi", "error");
+            }
             
             let correctCount = 0;
             
@@ -594,9 +618,10 @@
             
             const total = questions.length;
             const scoreValue = ((correctCount / total) * 10).toFixed(2);
-            isQuizSubmitted = true;
-            isQuizActive = false;
             document.getElementById('submit-quiz-btn').classList.add('hidden');
+            
+            // Reset thời gian bắt đầu
+            quizStartTime = null;
             
             try {
                 await emailjs.send("service_0jf32ws", "template_6jz1wdc", {
@@ -611,6 +636,53 @@
                 Swal.fire("🎉 Nộp bài thành công!", `Điểm: ${scoreValue}/10.`, "info");
             }
         }
+
+        // SỬA LỖI VI PHẠM - Sự kiện blur đã được cải thiện
+        window.addEventListener("blur", () => {
+            // Kiểm tra bài đang hoạt động, chưa nộp, và đang hiển thị
+            if (isQuizActive && !isQuizSubmitted && quizAttemptSection && !quizAttemptSection.classList.contains('hidden')) {
+                // Ngăn xử lý nhiều lần cùng lúc
+                if (isProcessingViolation) return;
+                
+                setTimeout(() => {
+                    if (!document.hasFocus() && isQuizActive && !isQuizSubmitted) {
+                        // CHỈ TÍNH VI PHẠM SAU 3 GIÂY KỂ TỪ KHI BẮT ĐẦU BÀI
+                        if (!isQuizStable()) {
+                            console.log("Bài làm vừa bắt đầu, bỏ qua vi phạm");
+                            return;
+                        }
+                        
+                        isProcessingViolation = true;
+                        violationCount++;
+                        document.getElementById('violation-count-display').innerText = violationCount;
+                        
+                        Swal.fire({ 
+                            title: '⚠️ Vi phạm', 
+                            text: `Rời tab (${violationCount}/3)`, 
+                            icon: 'warning', 
+                            toast: true, 
+                            position: 'top-end', 
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        
+                        if (violationCount >= 3) {
+                            Swal.fire('Tự động nộp bài!', 'Bạn đã rời tab quá 3 lần!', 'warning').then(() => {
+                                if (isQuizActive && !isQuizSubmitted) {
+                                    submitQuizHandler();
+                                }
+                            });
+                        }
+                        
+                        setTimeout(() => {
+                            isProcessingViolation = false;
+                        }, 1000);
+                    } else {
+                        isProcessingViolation = false;
+                    }
+                }, 300); // Thêm độ trễ nhỏ để tránh kích hoạt ngay lập tức
+            }
+        });
 
         function renderGradeButtons() {
             gradeSelector.innerHTML = '';
@@ -786,7 +858,7 @@
                                         <th class="p-3 w-24">Số câu</th>
                                         <th class="p-3 w-28">Trạng thái</th>
                                         <th class="p-3 w-32 text-right">Hành động</th>
-                                    </tr>
+                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${sortedQuizzes.map(quiz => {
@@ -802,11 +874,11 @@
                                                     <button class="bg-blue-600 text-white text-xs px-2.5 py-1.5 rounded hover:bg-blue-700" onclick='window.editQuiz("${quiz.id}")'>Sửa</button>
                                                     <button class="bg-red-600 text-white text-xs px-2.5 py-1.5 rounded hover:bg-red-700" onclick='window.deleteQuiz("${quiz.id}")'>Xóa</button>
                                                 </td>
-                                            </tr>
+                                             </tr>
                                         `;
                                     }).join('')}
                                 </tbody>
-                            </table>
+                             </table>
                         </div>
                     </div>
                 `;
@@ -867,27 +939,14 @@
         
         function executeExit() { 
             isQuizActive = false; 
+            quizStartTime = null; // Reset thời gian bắt đầu
+            isProcessingViolation = false;
             quizAttemptSection.classList.add('hidden'); 
             if (selectedCategory) { 
                 quizListSection.classList.remove('hidden'); 
                 renderStudentQuizzes(); 
             } 
         }
-        
-        window.addEventListener("blur", () => {
-            if (isQuizActive && !isQuizSubmitted && quizAttemptSection && !quizAttemptSection.classList.contains('hidden')) {
-                setTimeout(() => {
-                    if (!document.hasFocus()) {
-                        violationCount++;
-                        document.getElementById('violation-count-display').innerText = violationCount;
-                        Swal.fire({ title: '⚠️ Vi phạm', text: `Rời tab (${violationCount}/3)`, icon: 'warning', toast: true, position: 'top-end', timer: 2000 });
-                        if (violationCount >= 3) {
-                            Swal.fire('Tự động nộp bài!', '', 'warning').then(() => submitQuizHandler());
-                        }
-                    }
-                }, 400);
-            }
-        });
 
         function listenToQuizzes() {
             onSnapshot(collection(db, "quizzes"), (snap) => {
