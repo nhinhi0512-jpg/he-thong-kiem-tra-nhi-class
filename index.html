@@ -45,6 +45,16 @@
             background-color: #f3ede8;
             font-weight: 600;
         }
+        .filter-btn {
+            transition: all 0.2s;
+            background-color: #fff8f5;
+            border: 1.5px solid #e2d9d2;
+        }
+        .filter-btn.active {
+            border-color: var(--primary-brown);
+            background-color: #8D7B68;
+            color: white;
+        }
         .option-label {
             transition: all 0.15s;
             cursor: pointer;
@@ -122,6 +132,50 @@
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-word;
+        }
+        .category-group {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .category-header {
+            background: linear-gradient(135deg, #8D7B68 0%, #605141 100%);
+            color: white;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .category-header:hover {
+            opacity: 0.95;
+        }
+        .category-header .toggle-icon {
+            transition: transform 0.2s;
+        }
+        .category-header.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        .quiz-items {
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .quiz-items.collapsed {
+            display: none;
+        }
+        .stat-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .search-box {
+            border: 2px solid #e2d9d2;
+            transition: all 0.2s;
+        }
+        .search-box:focus {
+            border-color: var(--primary-brown);
+            outline: none;
         }
     </style>
 </head>
@@ -257,30 +311,7 @@
 
                     <div>
                         <p class="font-bold mb-2">📝 Nội dung câu hỏi (JSON)</p>
-                        <textarea id="quiz-questions-json" rows="10" class="w-full font-mono text-sm bg-gray-50" placeholder='[
-  {
-    "type": "multiple_choice",
-    "question": "Câu hỏi trắc nghiệm?",
-    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
-    "correct": 0,
-    "highlight": "từ_cần_gạch_chân",
-    "explain": "Giải thích đáp án đúng"
-  },
-  {
-    "type": "cloze",
-    "passage": "Đoạn văn có chỗ trống (26) ______",
-    "question": "Câu hỏi điền từ",
-    "correct": "đáp án đúng",
-    "explain": "Giải thích tại sao"
-  },
-  {
-    "type": "reorder",
-    "question": "Sắp xếp các từ sau thành câu:",
-    "words": ["từ1", "từ2", "từ3"],
-    "correct": ["từ1", "từ2", "từ3"],
-    "explain": "Giải thích cấu trúc câu"
-  }
-]'></textarea>
+                        <textarea id="quiz-questions-json" rows="10" class="w-full font-mono text-sm bg-gray-50"></textarea>
                     </div>
 
                     <div class="flex gap-3 justify-end">
@@ -290,21 +321,28 @@
                 </div>
 
                 <div class="card p-6 rounded-xl shadow-sm">
-                    <h3 class="text-xl font-bold mb-4">🗂️ Quản lý bài kiểm tra</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b bg-stone-100">
-                                    <th class="p-3">Tên đề</th>
-                                    <th class="p-3">Danh mục</th>
-                                    <th class="p-3">Số câu</th>
-                                    <th class="p-3">Trạng thái</th>
-                                    <th class="p-3 text-right">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-quiz-table-body"></tbody>
-                        </table>
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                        <h3 class="text-xl font-bold">🗂️ Quản lý bài kiểm tra</h3>
+                        <div class="flex gap-2 flex-wrap">
+                            <input type="text" id="search-quiz-input" placeholder="🔍 Tìm kiếm bài kiểm tra..." class="search-box px-4 py-2 rounded-lg text-sm w-64">
+                            <select id="status-filter" class="px-3 py-2 rounded-lg text-sm border">
+                                <option value="all">📋 Tất cả trạng thái</option>
+                                <option value="open">🔓 Đang mở</option>
+                                <option value="locked">🔒 Đã khóa</option>
+                            </select>
+                            <button id="expand-all-btn" class="bg-stone-100 px-3 py-2 rounded-lg text-sm hover:bg-stone-200">📂 Mở rộng tất cả</button>
+                            <button id="collapse-all-btn" class="bg-stone-100 px-3 py-2 rounded-lg text-sm hover:bg-stone-200">📁 Thu gọn tất cả</button>
+                        </div>
                     </div>
+                    
+                    <!-- Bộ lọc nhanh theo danh mục -->
+                    <div class="flex flex-wrap gap-2 mb-5 pb-3 border-b">
+                        <button class="filter-category-btn px-4 py-1.5 rounded-lg text-sm filter-btn active" data-category="all">📋 Tất cả</button>
+                        <button class="filter-category-btn px-4 py-1.5 rounded-lg text-sm filter-btn" data-category="toeic">🎯 TOEIC</button>
+                        <button class="filter-category-btn px-4 py-1.5 rounded-lg text-sm filter-btn" data-category="grade">📚 Khối lớp</button>
+                    </div>
+                    
+                    <div id="grouped-quiz-container" class="space-y-4 max-h-[600px] overflow-y-auto pr-2"></div>
                 </div>
             </div>
         </div>
@@ -331,6 +369,9 @@
 
         let allQuizzes = [], activeQuiz = null, selectedCategory = null, selectedValue = null, isQuizSubmitted = false, studentName = "", violationCount = 0, isQuizActive = false;
         let currentMode = new URLSearchParams(window.location.search).get('mode') === 'admin' ? "admin" : "student";
+        let currentFilterCategory = "all";
+        let currentStatusFilter = "all";
+        let currentSearchTerm = "";
 
         const studentApp = document.getElementById('student-app');
         const adminApp = document.getElementById('admin-app');
@@ -355,50 +396,29 @@
         // Hàm xác định category cho bài cũ (tương thích ngược)
         function getQuizCategory(quiz) {
             if (quiz.category) return quiz.category;
-            // Bài cũ không có category => mặc định là grade
             return 'grade';
         }
 
         // ========== HÀM TỰ ĐỘNG XUỐNG DÒNG ==========
         function autoFormatLineBreaks(text) {
             if (!text) return '';
-            
             let result = text;
-            
-            // Chuyển đổi \n thành <br>
             result = result.replace(/\n/g, '<br>');
-            
-            // Xử lý a., b., c., d. (thường)
             result = result.replace(/([a-d]\.)\s+/gi, '<br>$1 ');
-            
-            // Xử lý A., B., C., D. (hoa)
             result = result.replace(/([A-D]\.)\s+/g, '<br>$1 ');
-            
-            // Xử lý số 1., 2., 3., 4.,...
             result = result.replace(/(\d+\.)\s+/g, '<br>$1 ');
-            
-            // Xử lý e., f., g. (mở rộng)
             result = result.replace(/([e-g]\.)\s+/gi, '<br>$1 ');
-            
-            // Xử lý E., F., G.
             result = result.replace(/([E-G]\.)\s+/g, '<br>$1 ');
-            
-            // Loại bỏ <br> ở đầu chuỗi nếu có
             result = result.replace(/^<br>/, '');
-            
-            // Xử lý trường hợp <br><br> thành <br> (tránh xuống dòng quá nhiều)
             result = result.replace(/(<br>){3,}/g, '<br><br>');
-            
             return result;
         }
 
-        // Hàm escape HTML kết hợp với auto format
         function escapeAndFormat(str) {
             if (!str) return '';
             return autoFormatLineBreaks(escapeHtml(str));
         }
 
-        // Hàm xử lý highlight từ trong câu hỏi (có hỗ trợ format)
         function renderQuestionText(question, highlightWord) {
             if (!highlightWord) return escapeAndFormat(question);
             const regex = new RegExp(`(${highlightWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
@@ -406,7 +426,6 @@
             return formattedQuestion.replace(regex, `<span class="highlight-word">$1</span>`);
         }
 
-        // Hàm render câu hỏi hỗ trợ passage và highlight
         let lastPassageForCloze = null;
         let lastPassageForReading = null;
 
@@ -414,7 +433,6 @@
             const block = document.createElement('div');
             block.className = "p-4 rounded-xl bg-stone-50 border border-stone-200 mb-4";
             
-            // Xử lý passage cho cloze (chỉ hiển thị khi passage khác với câu trước)
             if (q.type === 'cloze' && q.passage && lastPassageForCloze !== q.passage) {
                 const passageDiv = document.createElement('div');
                 passageDiv.className = 'passage-box';
@@ -423,7 +441,6 @@
                 lastPassageForCloze = q.passage;
             }
             
-            // Xử lý passage cho reading (chỉ hiển thị khi passage khác với câu trước)
             if (q.type === 'reading' && q.passage && lastPassageForReading !== q.passage) {
                 const passageDiv = document.createElement('div');
                 passageDiv.className = 'passage-box';
@@ -453,7 +470,6 @@
             } 
             else if (q.type === 'cloze') {
                 if (q.options && Array.isArray(q.options)) {
-                    // Hiển thị dạng trắc nghiệm cho cloze
                     questionHtml += `<div class="space-y-2 ml-2">`;
                     q.options.forEach((opt, optIdx) => {
                         const letter = String.fromCharCode(65 + optIdx);
@@ -497,7 +513,6 @@
             const container = document.getElementById('questions-container');
             container.innerHTML = "";
             
-            // Reset lại biến nhớ passage
             lastPassageForCloze = null;
             lastPassageForReading = null;
             
@@ -600,7 +615,6 @@
         function renderGradeButtons() {
             gradeSelector.innerHTML = '';
             
-            // Thêm nút TOEIC
             const toeicBtn = document.createElement('button');
             toeicBtn.innerText = '🎯 TOEIC';
             toeicBtn.className = `px-5 py-2.5 rounded-xl font-medium grade-btn shadow-sm`;
@@ -616,7 +630,6 @@
             };
             gradeSelector.appendChild(toeicBtn);
             
-            // Các nút khối lớp từ 6 đến 12
             for (let g = 6; g <= 12; g++) {
                 const btn = document.createElement('button');
                 btn.innerText = `Khối ${g}`;
@@ -633,7 +646,6 @@
                 };
                 gradeSelector.appendChild(btn);
             }
-            // Mặc định chọn Khối 6
             if (gradeSelector.children[1]) gradeSelector.children[1].click();
         }
 
@@ -643,15 +655,11 @@
             
             let filtered = [];
             if (selectedCategory === 'grade') {
-                // Lọc bài kiểm tra theo khối:
-                // - Bài mới có category='grade' và grade khớp
-                // - Bài cũ (không có category) có grade khớp
                 filtered = allQuizzes.filter(q => {
                     const category = getQuizCategory(q);
                     const hasGrade = q.grade !== undefined;
                     const gradeMatch = q.grade == selectedValue;
                     const isOpen = q.status === 'open';
-                    // Chấp nhận bài cũ (không có category nhưng có grade) và bài mới (category='grade')
                     return (category === 'grade' || !q.category) && gradeMatch && isOpen;
                 });
             } else if (selectedCategory === 'toeic') {
@@ -673,6 +681,169 @@
                                   <button class="btn-primary px-5 py-2 rounded-lg">✍️ Làm bài</button>`;
                 card.querySelector('button').onclick = () => startQuiz(quiz);
                 quizGrid.appendChild(card);
+            });
+        }
+
+        // Hàm nhóm và hiển thị bài kiểm tra trong admin
+        function renderGroupedAdminQuizzes() {
+            const container = document.getElementById('grouped-quiz-container');
+            if (!container) return;
+            
+            // Lọc theo danh mục
+            let filtered = allQuizzes;
+            if (currentFilterCategory !== 'all') {
+                filtered = filtered.filter(q => getQuizCategory(q) === currentFilterCategory);
+            }
+            
+            // Lọc theo trạng thái
+            if (currentStatusFilter !== 'all') {
+                filtered = filtered.filter(q => q.status === currentStatusFilter);
+            }
+            
+            // Lọc theo từ khóa tìm kiếm
+            if (currentSearchTerm.trim() !== '') {
+                const term = currentSearchTerm.toLowerCase().trim();
+                filtered = filtered.filter(q => q.title.toLowerCase().includes(term));
+            }
+            
+            // Phân nhóm
+            const groups = {
+                toeic: { title: '🎯 TOEIC', icon: '🎯', quizzes: [], order: 0 },
+                grade6: { title: '📚 Khối 6', icon: '6️⃣', quizzes: [], order: 1, grade: 6 },
+                grade7: { title: '📚 Khối 7', icon: '7️⃣', quizzes: [], order: 2, grade: 7 },
+                grade8: { title: '📚 Khối 8', icon: '8️⃣', quizzes: [], order: 3, grade: 8 },
+                grade9: { title: '📚 Khối 9', icon: '9️⃣', quizzes: [], order: 4, grade: 9 },
+                grade10: { title: '📚 Khối 10', icon: '🔟', quizzes: [], order: 5, grade: 10 },
+                grade11: { title: '📚 Khối 11', icon: '⏸️', quizzes: [], order: 6, grade: 11 },
+                grade12: { title: '📚 Khối 12', icon: '⏹️', quizzes: [], order: 7, grade: 12 }
+            };
+            
+            filtered.forEach(quiz => {
+                const category = getQuizCategory(quiz);
+                if (category === 'toeic') {
+                    groups.toeic.quizzes.push(quiz);
+                } else if (category === 'grade' && quiz.grade) {
+                    const gradeKey = `grade${quiz.grade}`;
+                    if (groups[gradeKey]) {
+                        groups[gradeKey].quizzes.push(quiz);
+                    } else {
+                        // Nếu khối không nằm trong 6-12, tạo nhóm riêng
+                        if (!groups[`grade_other_${quiz.grade}`]) {
+                            groups[`grade_other_${quiz.grade}`] = { 
+                                title: `📚 Khối ${quiz.grade}`, 
+                                icon: '📚', 
+                                quizzes: [], 
+                                order: 100 
+                            };
+                        }
+                        groups[`grade_other_${quiz.grade}`].quizzes.push(quiz);
+                    }
+                }
+            });
+            
+            // Sắp xếp các nhóm theo order
+            const sortedGroups = Object.values(groups)
+                .filter(group => group.quizzes.length > 0)
+                .sort((a, b) => a.order - b.order);
+            
+            if (sortedGroups.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-gray-500">📭 Không tìm thấy bài kiểm tra nào phù hợp</div>`;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            sortedGroups.forEach((group, groupIdx) => {
+                // Sắp xếp bài kiểm tra trong nhóm theo tên
+                const sortedQuizzes = [...group.quizzes].sort((a, b) => a.title.localeCompare(b.title));
+                
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'category-group';
+                groupDiv.dataset.groupId = `group-${groupIdx}`;
+                
+                const quizCount = sortedQuizzes.length;
+                const openCount = sortedQuizzes.filter(q => q.status === 'open').length;
+                const lockedCount = quizCount - openCount;
+                
+                groupDiv.innerHTML = `
+                    <div class="category-header flex justify-between items-center cursor-pointer" data-group="${groupIdx}">
+                        <div class="flex items-center gap-2">
+                            <span class="toggle-icon text-xl">▼</span>
+                            <span class="text-lg font-semibold">${group.icon} ${group.title}</span>
+                            <span class="stat-badge">📝 ${quizCount} bài</span>
+                            ${openCount > 0 ? `<span class="stat-badge" style="background: rgba(34,197,94,0.3);">🔓 ${openCount} mở</span>` : ''}
+                            ${lockedCount > 0 ? `<span class="stat-badge" style="background: rgba(156,163,175,0.3);">🔒 ${lockedCount} khóa</span>` : ''}
+                        </div>
+                        <span class="text-sm opacity-80">${quizCount} bài kiểm tra</span>
+                    </div>
+                    <div class="quiz-items" data-group-content="${groupIdx}">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b bg-stone-50">
+                                        <th class="p-3 w-2/5">Tên đề</th>
+                                        <th class="p-3 w-1/5">Danh mục</th>
+                                        <th class="p-3 w-24">Số câu</th>
+                                        <th class="p-3 w-28">Trạng thái</th>
+                                        <th class="p-3 w-32 text-right">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${sortedQuizzes.map(quiz => {
+                                        const category = getQuizCategory(quiz);
+                                        let categoryText = category === 'toeic' ? '🎯 TOEIC' : (quiz.grade ? `Khối ${quiz.grade}` : 'Khối ?');
+                                        return `
+                                            <tr class="border-b hover:bg-stone-50">
+                                                <td class="p-3 font-semibold">${escapeHtml(quiz.title)}</td>
+                                                <td class="p-3">${categoryText}</td>
+                                                <td class="p-3">${quiz.questions?.length || 0}</td>
+                                                <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${quiz.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-stone-200 text-stone-700'}">${quiz.status === 'open' ? '🔓 Mở' : '🔒 Khóa'}</span></td>
+                                                <td class="p-3 text-right space-x-1">
+                                                    <button class="bg-blue-600 text-white text-xs px-2.5 py-1.5 rounded hover:bg-blue-700" onclick='window.editQuiz("${quiz.id}")'>Sửa</button>
+                                                    <button class="bg-red-600 text-white text-xs px-2.5 py-1.5 rounded hover:bg-red-700" onclick='window.deleteQuiz("${quiz.id}")'>Xóa</button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(groupDiv);
+            });
+            
+            // Gắn sự kiện cho các header
+            document.querySelectorAll('.category-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const groupIdx = header.dataset.group;
+                    const contentDiv = document.querySelector(`.quiz-items[data-group-content="${groupIdx}"]`);
+                    if (contentDiv) {
+                        contentDiv.classList.toggle('collapsed');
+                        header.classList.toggle('collapsed');
+                    }
+                });
+            });
+        }
+        
+        // Hàm mở rộng tất cả các nhóm
+        function expandAllGroups() {
+            document.querySelectorAll('.quiz-items').forEach(el => {
+                el.classList.remove('collapsed');
+            });
+            document.querySelectorAll('.category-header').forEach(el => {
+                el.classList.remove('collapsed');
+            });
+        }
+        
+        // Hàm thu gọn tất cả các nhóm
+        function collapseAllGroups() {
+            document.querySelectorAll('.quiz-items').forEach(el => {
+                el.classList.add('collapsed');
+            });
+            document.querySelectorAll('.category-header').forEach(el => {
+                el.classList.add('collapsed');
             });
         }
 
@@ -722,7 +893,7 @@
             onSnapshot(collection(db, "quizzes"), (snap) => {
                 allQuizzes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderStudentQuizzes();
-                if (currentMode === "admin") renderAdminTable();
+                if (currentMode === "admin") renderGroupedAdminQuizzes();
             });
         }
         
@@ -741,33 +912,6 @@
                     if(user) signOut(auth); 
                 } 
             }); 
-        }
-        
-        function renderAdminTable() {
-            const tbody = document.getElementById('admin-quiz-table-body');
-            if(!tbody) return;
-            tbody.innerHTML = "";
-            allQuizzes.forEach(quiz => {
-                const row = tbody.insertRow();
-                row.className = "border-b hover:bg-stone-50";
-                const category = getQuizCategory(quiz);
-                let categoryText = '';
-                if (category === 'toeic') {
-                    categoryText = '🎯 TOEIC';
-                } else {
-                    categoryText = quiz.grade ? `Khối ${quiz.grade}` : 'Khối ?';
-                }
-                row.innerHTML = `
-                    <td class="p-3 font-semibold">${escapeHtml(quiz.title)}</td>
-                    <td class="p-3">${categoryText}</td>
-                    <td class="p-3">${quiz.questions?.length || 0}</td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${quiz.status==='open' ? 'bg-green-100 text-green-800' : 'bg-stone-200 text-stone-700'}">${quiz.status==='open' ? '🔓 Mở' : '🔒 Khóa'}</span></td>
-                    <td class="p-3 text-right space-x-1">
-                        <button class="bg-blue-600 text-white text-xs px-2.5 py-1.5 rounded hover:bg-blue-700" onclick='window.editQuiz("${quiz.id}")'>Sửa</button>
-                        <button class="bg-red-600 text-white text-xs px-2.5 py-1.5 rounded hover:bg-red-700" onclick='window.deleteQuiz("${quiz.id}")'>Xóa</button>
-                    </td>
-                `;
-            });
         }
         
         window.editQuiz = (id) => { 
@@ -855,7 +999,6 @@
             document.getElementById('btn-cancel-edit').classList.add('hidden'); 
         };
         
-        // Hàm xem trước JSON
         window.previewJson = () => {
             const fileInput = document.getElementById('quiz-json-file');
             if(!fileInput.files || !fileInput.files[0]) {
@@ -881,7 +1024,6 @@
             document.getElementById('json-preview-modal').classList.add('hidden');
         };
         
-        // Cập nhật hàm load file - hỗ trợ mọi cấu trúc JSON
         function setupFileLoader() {
             const fileInput = document.getElementById('quiz-json-file');
             if(fileInput) {
@@ -892,7 +1034,6 @@
                     reader.onload = (ev) => {
                         try {
                             const parsed = JSON.parse(ev.target.result);
-                            // Kiểm tra nếu là mảng các câu hỏi
                             if(Array.isArray(parsed)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed, null, 2);
                                 Swal.fire({
@@ -903,7 +1044,6 @@
                                     showConfirmButton: false
                                 });
                             } 
-                            // Nếu là object có chứa questions array
                             else if(parsed.questions && Array.isArray(parsed.questions)) {
                                 document.getElementById('quiz-questions-json').value = JSON.stringify(parsed.questions, null, 2);
                                 Swal.fire({
@@ -930,6 +1070,44 @@
             }
         }
         
+        function setupAdminFilters() {
+            const searchInput = document.getElementById('search-quiz-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    currentSearchTerm = e.target.value;
+                    renderGroupedAdminQuizzes();
+                });
+            }
+            
+            const statusFilter = document.getElementById('status-filter');
+            if (statusFilter) {
+                statusFilter.addEventListener('change', (e) => {
+                    currentStatusFilter = e.target.value;
+                    renderGroupedAdminQuizzes();
+                });
+            }
+            
+            const filterBtns = document.querySelectorAll('.filter-category-btn');
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilterCategory = btn.dataset.category;
+                    renderGroupedAdminQuizzes();
+                });
+            });
+            
+            const expandAllBtn = document.getElementById('expand-all-btn');
+            if (expandAllBtn) {
+                expandAllBtn.addEventListener('click', expandAllGroups);
+            }
+            
+            const collapseAllBtn = document.getElementById('collapse-all-btn');
+            if (collapseAllBtn) {
+                collapseAllBtn.addEventListener('click', collapseAllGroups);
+            }
+        }
+        
         function escapeHtml(str) { 
             if(!str) return ''; 
             return String(str).replace(/[&<>]/g, function(m){
@@ -947,7 +1125,10 @@
         renderGradeButtons();
         listenToQuizzes();
         setupFileLoader();
-        if (currentMode === "admin") checkAdminAuth();
+        if (currentMode === "admin") {
+            checkAdminAuth();
+            setupAdminFilters();
+        }
         handleCategoryChange();
     </script>
 </body>
